@@ -58,8 +58,57 @@
   .legend-row {
     display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12px;
   }
+  .legend-row input[type="checkbox"] {
+    accent-color: #38bdf8;
+    cursor: pointer;
+  }
   .legend-color {
     width: 32px; height: 8px; border-radius: 4px; flex-shrink: 0;
+  }
+  .legend-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .mini-btn {
+    flex: 1;
+    padding: 5px 8px;
+    border-radius: 8px;
+    border: 1px solid #475569;
+    background: #1e293b;
+    color: #e2e8f0;
+    cursor: pointer;
+    font-size: 11px;
+  }
+  .mini-btn:hover { background: #334155; }
+  .range-box {
+    margin: 8px 0 4px;
+    padding-top: 8px;
+    border-top: 1px solid #334155;
+  }
+  .range-box label {
+    display: block;
+    font-size: 11px;
+    color: #94a3b8;
+    margin-bottom: 6px;
+  }
+  .range-inputs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .range-inputs input {
+    width: 100%;
+    background: #0f172a;
+    color: #e2e8f0;
+    border: 1px solid #475569;
+    border-radius: 8px;
+    padding: 5px 6px;
+    font-size: 12px;
+  }
+  .range-inputs span {
+    color: #64748b;
+    font-size: 11px;
   }
   .toggle-btn {
     width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #475569;
@@ -120,26 +169,19 @@
 
     <div id="controls">
       <h3>圖例 — 會員銷售佔比</h3>
-      <div class="legend-row"><div class="legend-color"
-          style="background:#ffffff"></div><span>0 – 10%</span></div>
-      <div class="legend-row"><div class="legend-color"
-          style="background:#3d0099"></div><span>10 – 20%</span></div>
-      <div class="legend-row"><div class="legend-color"
-          style="background:#0033cc"></div><span>20 – 30%</span></div>
-      <div class="legend-row"><div class="legend-color"
-          style="background:#0088ee"></div><span>30 – 40%</span></div>
-      <div class="legend-row"><div class="legend-color"
-          style="background:#00ccbb"></div><span>40 – 50%</span></div>
-      <div class="legend-row"><div class="legend-color"
-          style="background:#22dd55"></div><span>50 – 60%</span></div>
-      <div class="legend-row"><div class="legend-color"
-          style="background:#aaee00"></div><span>60 – 70%</span></div>
-      <div class="legend-row"><div class="legend-color"
-          style="background:#ffcc00"></div><span>70 – 80%</span></div>
-      <div class="legend-row"><div class="legend-color"
-          style="background:#ff6600"></div><span>80 – 90%</span></div>
-      <div class="legend-row"><div class="legend-color"
-          style="background:#ff1111"></div><span>90 – 100%</span></div>
+      <div class="legend-actions">
+        <button class="mini-btn" id="legendSelectAll" type="button">全選</button>
+        <button class="mini-btn" id="legendClearAll" type="button">清空</button>
+      </div>
+      <div id="legendFilters"></div>
+      <div class="range-box">
+        <label>Store ID 範圍（數字）</label>
+        <div class="range-inputs">
+          <input id="storeRangeStart" type="number" min="1" placeholder="起始">
+          <span>~</span>
+          <input id="storeRangeEnd" type="number" min="1" placeholder="結束">
+        </div>
+      </div>
       <button class="toggle-btn active" id="btnHeat" onclick="toggleHeat()">🌡
         熱力圖</button>
       <button class="toggle-btn active" id="btnDots" onclick="toggleDots()">📍
@@ -165,6 +207,27 @@ const DATE_MAP = Object.fromEntries(DATE_CONFIGS.map(cfg => [cfg.key, cfg]));
 const dateSelect = document.getElementById('dateSelect');
 const dateLabel = document.getElementById('dateLabel');
 const storeCountLabel = document.getElementById('storeCountLabel');
+const legendFiltersEl = document.getElementById('legendFilters');
+const legendSelectAllBtn = document.getElementById('legendSelectAll');
+const legendClearAllBtn = document.getElementById('legendClearAll');
+const storeRangeStartInput = document.getElementById('storeRangeStart');
+const storeRangeEndInput = document.getElementById('storeRangeEnd');
+
+const MIX_BANDS = [
+  { min: 0, max: 10, color: '#ffffff', label: '0 – 10%' },
+  { min: 10, max: 20, color: '#3d0099', label: '10 – 20%' },
+  { min: 20, max: 30, color: '#0033cc', label: '20 – 30%' },
+  { min: 30, max: 40, color: '#0088ee', label: '30 – 40%' },
+  { min: 40, max: 50, color: '#00ccbb', label: '40 – 50%' },
+  { min: 50, max: 60, color: '#22dd55', label: '50 – 60%' },
+  { min: 60, max: 70, color: '#aaee00', label: '60 – 70%' },
+  { min: 70, max: 80, color: '#ffcc00', label: '70 – 80%' },
+  { min: 80, max: 90, color: '#ff6600', label: '80 – 90%' },
+  { min: 90, max: 100, color: '#ff1111', label: '90 – 100%' },
+];
+
+const selectedBandIndexes = new Set(MIX_BANDS.map((_, idx) => idx));
+let allStores = [];
 
 DATE_CONFIGS.forEach(cfg => {
   const option = document.createElement('option');
@@ -262,6 +325,67 @@ function getMixColor(mix) {
   return '#ffffff';
 }
 
+function getBandIndex(mix) {
+  if (!Number.isFinite(mix) || mix < 10) return 0;
+  if (mix >= 90) return 9;
+  return Math.floor(mix / 10);
+}
+
+function parseStoreNumericId(storeId) {
+  const match = String(storeId || '').match(/(\d+)$/);
+  return match ? Number.parseInt(match[1], 10) : NaN;
+}
+
+function getStoreRange() {
+  const start = Number.parseInt(storeRangeStartInput.value, 10);
+  const end = Number.parseInt(storeRangeEndInput.value, 10);
+  return {
+    start: Number.isFinite(start) ? start : null,
+    end: Number.isFinite(end) ? end : null,
+  };
+}
+
+function filterStores(stores) {
+  const { start, end } = getStoreRange();
+  return stores.filter((s) => {
+    if (!selectedBandIndexes.has(getBandIndex(s.mix))) return false;
+    const numericId = parseStoreNumericId(s.store_id);
+    if (start !== null && Number.isFinite(numericId) && numericId < start) return false;
+    if (end !== null && Number.isFinite(numericId) && numericId > end) return false;
+    return true;
+  });
+}
+
+function applyCurrentFilters() {
+  const filteredStores = filterStores(allStores);
+  updateStats(filteredStores);
+  updateHeat(filteredStores);
+  renderMarkers(filteredStores);
+}
+
+function renderLegendFilters() {
+  legendFiltersEl.innerHTML = '';
+  MIX_BANDS.forEach((band, idx) => {
+    const row = document.createElement('label');
+    row.className = 'legend-row';
+    row.innerHTML = `
+      <input type="checkbox" data-band-index="${idx}" checked>
+      <div class="legend-color" style="background:${band.color}"></div>
+      <span>${band.label}</span>
+    `;
+    legendFiltersEl.appendChild(row);
+  });
+
+  legendFiltersEl.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
+    checkbox.addEventListener('change', (e) => {
+      const idx = Number.parseInt(e.target.dataset.bandIndex, 10);
+      if (e.target.checked) selectedBandIndexes.add(idx);
+      else selectedBandIndexes.delete(idx);
+      applyCurrentFilters();
+    });
+  });
+}
+
 const tooltip = document.getElementById('tooltip');
 let markers = [];
 let heatVisible = true, dotsVisible = true;
@@ -330,10 +454,8 @@ function applyDate(dateKey) {
   if (!cfg) return;
   dateSelect.value = dateKey;
   if (dateLabel) dateLabel.textContent = cfg.label;
-  const stores = buildStores(dateKey);
-  updateStats(stores);
-  updateHeat(stores);
-  renderMarkers(stores);
+  allStores = buildStores(dateKey);
+  applyCurrentFilters();
 }
 
 // Toggle functions
@@ -354,6 +476,24 @@ function toggleDots() {
 }
 
 dateSelect.addEventListener('change', (e) => applyDate(e.target.value));
+legendSelectAllBtn.addEventListener('click', () => {
+  selectedBandIndexes.clear();
+  MIX_BANDS.forEach((_, idx) => selectedBandIndexes.add(idx));
+  legendFiltersEl.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
+    checkbox.checked = true;
+  });
+  applyCurrentFilters();
+});
+legendClearAllBtn.addEventListener('click', () => {
+  selectedBandIndexes.clear();
+  legendFiltersEl.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
+    checkbox.checked = false;
+  });
+  applyCurrentFilters();
+});
+storeRangeStartInput.addEventListener('input', applyCurrentFilters);
+storeRangeEndInput.addEventListener('input', applyCurrentFilters);
+renderLegendFilters();
 applyDate(DATE_CONFIGS[0].key);
 </script>
   </body>
