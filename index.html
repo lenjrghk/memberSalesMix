@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOK App 門店會員銷售佔比地圖</title>
+    <link rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script
+      src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+    <style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #0f172a; color: #e2e8f0; }
+  #header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border-bottom: 1px solid #334155;
+    padding: 12px 20px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  #header h1 { font-size: 18px; font-weight: 700; color: #f1f5f9; }
+  #header .subtitle { font-size: 12px; color: #94a3b8; }
+  .stats-bar {
+    display: flex; gap: 20px; margin-left: auto;
+  }
+  .stat {
+    text-align: center;
+  }
+  .stat .val { font-size: 20px; font-weight: 700; color: #38bdf8; }
+  .stat .lbl { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+  #map { position: fixed; top: 64px; left: 0; right: 0; bottom: 0; }
+  #controls {
+    position: fixed; bottom: 20px; left: 20px; z-index: 1000;
+    background: rgba(15, 23, 42, 0.92);
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 16px;
+    backdrop-filter: blur(10px);
+    width: 230px;
+  }
+  #controls h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; margin-bottom: 12px; }
+  .legend-row {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12px;
+  }
+  .legend-color {
+    width: 32px; height: 8px; border-radius: 4px; flex-shrink: 0;
+  }
+  .toggle-btn {
+    width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #475569;
+    background: #1e293b; color: #e2e8f0; cursor: pointer; font-size: 12px;
+    margin-top: 10px; transition: all 0.2s;
+  }
+  .toggle-btn:hover { background: #334155; }
+  .toggle-btn.active { background: #0369a1; border-color: #38bdf8; color: #fff; }
+  #tooltip {
+    position: fixed; z-index: 2000;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid #475569;
+    border-radius: 10px;
+    padding: 12px 16px;
+    pointer-events: none;
+    display: none;
+    max-width: 260px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  #tooltip .tip-id { font-size: 10px; color: #64748b; margin-bottom: 4px; }
+  #tooltip .tip-addr { font-size: 11px; color: #94a3b8; margin-bottom: 10px; line-height: 1.4; }
+  #tooltip .tip-main { font-size: 24px; font-weight: 800; margin-bottom: 8px; }
+  .tip-row { display: flex; justify-content: space-between; font-size: 11px; padding: 3px 0; border-bottom: 1px solid #1e293b; }
+  .tip-row:last-child { border-bottom: none; }
+  .tip-label { color: #94a3b8; }
+  .tip-value { font-weight: 600; }
+  .mix-bar { height: 4px; border-radius: 2px; margin-top: 8px; background: #1e293b; }
+  .mix-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
+</style>
+  </head>
+  <body>
+
+    <div id="header">
+      <div>
+        <h1>🗺️ SOK App 門店會員銷售佔比地圖</h1>
+        <div class="subtitle">新 SOK App | 197 家門店 | Kiosk GC 數據</div>
+      </div>
+      <div class="stats-bar">
+        <div class="stat"><div class="val" id="stat-total">197</div><div
+            class="lbl">門店數</div></div>
+        <div class="stat"><div class="val" id="stat-avg">-</div><div
+            class="lbl">整體會員佔比</div></div>
+        <div class="stat"><div class="val" id="stat-high">-</div><div
+            class="lbl">最高門店</div></div>
+        <div class="stat"><div class="val" id="stat-low">-</div><div
+            class="lbl">最低門店</div></div>
+      </div>
+    </div>
+
+    <div id="map"></div>
+    <div id="tooltip"></div>
+
+    <div id="controls">
+      <h3>圖例 — 會員銷售佔比</h3>
+      <div class="legend-row"><div class="legend-color"
+          style="background:#ffffff"></div><span>0 – 10%</span></div>
+      <div class="legend-row"><div class="legend-color"
+          style="background:#3d0099"></div><span>10 – 20%</span></div>
+      <div class="legend-row"><div class="legend-color"
+          style="background:#0033cc"></div><span>20 – 30%</span></div>
+      <div class="legend-row"><div class="legend-color"
+          style="background:#0088ee"></div><span>30 – 40%</span></div>
+      <div class="legend-row"><div class="legend-color"
+          style="background:#00ccbb"></div><span>40 – 50%</span></div>
+      <div class="legend-row"><div class="legend-color"
+          style="background:#22dd55"></div><span>50 – 60%</span></div>
+      <div class="legend-row"><div class="legend-color"
+          style="background:#aaee00"></div><span>60 – 70%</span></div>
+      <div class="legend-row"><div class="legend-color"
+          style="background:#ffcc00"></div><span>70 – 80%</span></div>
+      <div class="legend-row"><div class="legend-color"
+          style="background:#ff6600"></div><span>80 – 90%</span></div>
+      <div class="legend-row"><div class="legend-color"
+          style="background:#ff1111"></div><span>90 – 100%</span></div>
+      <button class="toggle-btn active" id="btnHeat" onclick="toggleHeat()">🌡
+        熱力圖</button>
+      <button class="toggle-btn active" id="btnDots" onclick="toggleDots()">📍
+        門店標記</button>
+    </div>
+
+    <script>
+const STORES = [{"store_id":"TWI249","address":"高雄市小港區中安路771號","lat":22.5850263,"lng":120.363788,"mix":62.7,"phone_mix":54.0,"qr_mix":7.4,"coupon_mix":1.3,"tc":393,"amt":116232},{"store_id":"TWI248","address":"桃園市中壢區領航南路二段236號","lat":25.0044944,"lng":121.2144001,"mix":62.0,"phone_mix":50.8,"qr_mix":10.3,"coupon_mix":0.9,"tc":504,"amt":145909},{"store_id":"TWI247","address":"台中市梧棲區文化路二段266號","lat":24.2570926,"lng":120.5317461,"mix":52.4,"phone_mix":43.5,"qr_mix":8.0,"coupon_mix":0.8,"tc":557,"amt":147537},{"store_id":"TWI246","address":"台中市北屯區北屯路390號","lat":24.1773302,"lng":120.7001898,"mix":57.6,"phone_mix":44.6,"qr_mix":11.4,"coupon_mix":1.5,"tc":580,"amt":142756},{"store_id":"TWI245","address":"台南市麻豆區興中路143號","lat":23.1837286,"lng":120.251857,"mix":49.5,"phone_mix":41.6,"qr_mix":6.3,"coupon_mix":1.6,"tc":466,"amt":131340},{"store_id":"TWI244","address":"台北市信義區永吉路229號","lat":25.0457318,"lng":121.5743097,"mix":55.1,"phone_mix":44.6,"qr_mix":9.5,"coupon_mix":1.0,"tc":788,"amt":188887},{"store_id":"TWI243","address":"台南市新市區中正路106號","lat":24.1503844,"lng":120.6495837,"mix":48.8,"phone_mix":40.4,"qr_mix":7.2,"coupon_mix":1.3,"tc":586,"amt":164208},{"store_id":"TWI242","address":"桃園市中壢區民族路五段218號","lat":24.9587755,"lng":121.172631,"mix":42.9,"phone_mix":35.6,"qr_mix":5.8,"coupon_mix":1.5,"tc":499,"amt":133041},{"store_id":"TWI241","address":"台南市安南區安和路五段243號","lat":23.0675121,"lng":120.2169111,"mix":48.2,"phone_mix":38.7,"qr_mix":9.0,"coupon_mix":0.5,"tc":441,"amt":111958},{"store_id":"TWI240","address":"台北市中山區民權東路二段124號","lat":25.0622858,"lng":121.5326605,"mix":51.0,"phone_mix":43.8,"qr_mix":6.4,"coupon_mix":0.8,"tc":808,"amt":184831},{"store_id":"TWI239","address":"台南市仁德區中山路250號","lat":22.9707762,"lng":120.2606289,"mix":58.3,"phone_mix":44.6,"qr_mix":10.7,"coupon_mix":3.0,"tc":510,"amt":150406},{"store_id":"TWI237","address":"台北市大同區重慶北路三段251號","lat":25.0714494,"lng":121.5139999,"mix":52.1,"phone_mix":44.2,"qr_mix":7.0,"coupon_mix":0.8,"tc":439,"amt":104045},{"store_id":"TWI235","address":"新竹縣竹北市中華路363號","lat":24.8374778,"lng":121.0049282,"mix":45.0,"phone_mix":37.3,"qr_mix":6.7,"coupon_mix":1.0,"tc":495,"amt":136914},{"store_id":"TWI234","address":"基隆市信義區深溪路156號","lat":25.1341377,"lng":121.7827639,"mix":57.0,"phone_mix":45.5,"qr_mix":9.8,"coupon_mix":1.7,"tc":474,"amt":117540},{"store_id":"TWI233","address":"宜蘭縣蘇澳鎮中山路一段90號","lat":24.596126,"lng":121.8507605,"mix":48.4,"phone_mix":41.6,"qr_mix":6.1,"coupon_mix":0.7,"tc":268,"amt":79132},{"store_id":"TWI232","address":"雲林縣斗六市民生路106號","lat":23.7103459,"lng":120.5399837,"mix":39.2,"phone_mix":33.0,"qr_mix":5.1,"coupon_mix":1.1,"tc":594,"amt":170405},{"store_id":"TWI231","address":"南投縣竹山鎮大明路716號","lat":23.7549911,"lng":120.6773366,"mix":48.9,"phone_mix":44.0,"qr_mix":3.2,"coupon_mix":1.8,"tc":324,"amt":91595},{"store_id":"TWI230","address":"新北市中和區景安路114號","lat":24.9952082,"lng":121.5053155,"mix":51.1,"phone_mix":38.8,"qr_mix":9.5,"coupon_mix":2.8,"tc":219,"amt":51231},{"store_id":"TWI229","address":"台北市北投區中央北路四段525號","lat":25.1278979,"lng":121.4680802,"mix":52.4,"phone_mix":41.0,"qr_mix":11.1,"coupon_mix":0.3,"tc":265,"amt":60952},{"store_id":"TWI228","address":"台中市霧峰區林森路342號","lat":24.0560048,"lng":120.6961745,"mix":59.6,"phone_mix":45.7,"qr_mix":12.7,"coupon_mix":1.2,"tc":600,"amt":171445},{"store_id":"TWI227","address":"327桃園市新屋區中山路240號1樓","lat":24.9725962,"lng":121.1080468,"mix":52.8,"phone_mix":50.1,"qr_mix":1.7,"coupon_mix":1.0,"tc":510,"amt":194699},{"store_id":"TWI226","address":"247新北市蘆洲區長榮路80號1樓","lat":25.0836851,"lng":121.4623286,"mix":58.1,"phone_mix":48.9,"qr_mix":8.0,"coupon_mix":1.1,"tc":803,"amt":211774},{"store_id":"TWI225","address":"台南市佳里區光復路319號","lat":23.1629739,"lng":120.1746934,"mix":53.2,"phone_mix":42.6,"qr_mix":10.0,"coupon_mix":0.6,"tc":350,"amt":91894},{"store_id":"TWI224","address":"高雄市前鎮區瑞隆路445號","lat":22.605276,"lng":120.3291263,"mix":56.6,"phone_mix":47.2,"qr_mix":7.1,"coupon_mix":2.3,"tc":420,"amt":98274},{"store_id":"TWI223","address":"台北市北投區裕民一路6號","lat":25.1166016,"lng":121.5163408,"mix":87.2,"phone_mix":79.6,"qr_mix":7.2,"coupon_mix":0.5,"tc":794,"amt":173838},{"store_id":"TWI222","address":"台中市大甲區經國路 500 號 1 樓","lat":24.350125,"lng":120.6174653,"mix":52.8,"phone_mix":47.8,"qr_mix":3.6,"coupon_mix":1.4,"tc":502,"amt":144454},{"store_id":"TWI221","address":"730台南市新營區復興路636號","lat":23.3060926,"lng":120.2958818,"mix":55.7,"phone_mix":49.0,"qr_mix":6.3,"coupon_mix":0.3,"tc":492,"amt":139542},{"store_id":"TWI220","address":"台北市內湖區金龍路8號","lat":25.0845424,"lng":121.5941192,"mix":50.8,"phone_mix":39.2,"qr_mix":8.2,"coupon_mix":3.4,"tc":759,"amt":185583},{"store_id":"TWI219","address":"台中市龍井區遊園南路185號1-2樓","lat":24.1819301,"lng":120.5842612,"mix":49.5,"phone_mix":43.2,"qr_mix":5.3,"coupon_mix":0.9,"tc":598,"amt":153508},{"store_id":"TWI218","address":"249新北市八里區中華路二段512號1樓","lat":25.1453919,"lng":121.3994666,"mix":53.7,"phone_mix":46.2,"qr_mix":6.6,"coupon_mix":0.9,"tc":345,"amt":100798},{"store_id":"TWI217","address":"105台北市大安區復興南路二段183號","lat":25.0267862,"lng":121.5436761,"mix":39.1,"phone_mix":31.4,"qr_mix":4.9,"coupon_mix":2.8,"tc":583,"amt":128197},{"store_id":"TWI216","address":"928屏東縣東港鎮中山路147號","lat":22.4682304,"lng":120.447164,"mix":45.4,"phone_mix":38.3,"qr_mix":6.3,"coupon_mix":0.8,"tc":304,"amt":86660},{"store_id":"TWI214","address":"新竹市中正路36號","lat":24.8034605,"lng":120.9711917,"mix":45.3,"phone_mix":41.9,"qr_mix":3.1,"coupon_mix":0.3,"tc":1985,"amt":529958},{"store_id":"TWI211","address":"花蓮縣吉安鄉中華路二段1號","lat":23.9740249,"lng":121.5879187,"mix":46.9,"phone_mix":41.3,"qr_mix":4.4,"coupon_mix":1.2,"tc":377,"amt":108404},{"store_id":"TWI208","address":"台南市中西區民族路二段64號","lat":22.9946207,"lng":120.2102924,"mix":30.7,"phone_mix":27.1,"qr_mix":2.7,"coupon_mix":0.9,"tc":614,"amt":156696},{"store_id":"TWI204","address":"雲林縣北港鎮華南路36號","lat":23.5713875,"lng":120.300167,"mix":52.5,"phone_mix":44.7,"qr_mix":7.8,"coupon_mix":0.1,"tc":385,"amt":117517},{"store_id":"TWI203","address":"新竹湖口","lat":24.9312374,"lng":121.064729,"mix":50.5,"phone_mix":49.0,"qr_mix":0,"coupon_mix":1.4,"tc":454,"amt":115183},{"store_id":"TWI202","address":"新北市板橋區忠孝路21號","lat":25.002014,"lng":121.4604532,"mix":57.4,"phone_mix":46.4,"qr_mix":9.4,"coupon_mix":1.6,"tc":492,"amt":122644},{"store_id":"TWI201","address":"桃園台茂","lat":24.1842419,"lng":120.6448156,"mix":51.0,"phone_mix":50.5,"qr_mix":0,"coupon_mix":0.5,"tc":679,"amt":176515},{"store_id":"TWI200","address":"台中市北屯區崇德路三段463號","lat":24.1912051,"lng":120.6860921,"mix":60.4,"phone_mix":53.3,"qr_mix":6.6,"coupon_mix":0.5,"tc":315,"amt":78777},{"store_id":"TWI199","address":"宜蘭縣礁溪鄉礁溪路五段67號1樓","lat":24.8267665,"lng":121.7716749,"mix":53.2,"phone_mix":43.5,"qr_mix":8.1,"coupon_mix":1.6,"tc":306,"amt":80985},{"store_id":"TWI198","address":"台北市內湖區東湖路138號","lat":25.0679188,"lng":121.616813,"mix":52.2,"phone_mix":47.8,"qr_mix":3.0,"coupon_mix":1.4,"tc":388,"amt":95199},{"store_id":"TWI197","address":"新北市中和區員山路202號","lat":25.0006459,"lng":121.4813873,"mix":53.8,"phone_mix":46.0,"qr_mix":6.8,"coupon_mix":1.1,"tc":722,"amt":170557},{"store_id":"TWI195","address":"彰化縣北斗鎮中山路二段40號","lat":23.8742657,"lng":120.5181453,"mix":52.3,"phone_mix":43.3,"qr_mix":7.6,"coupon_mix":1.4,"tc":491,"amt":147966},{"store_id":"TWI194","address":"新北市新店區安康路二段60號","lat":24.963765,"lng":121.5149131,"mix":56.1,"phone_mix":49.6,"qr_mix":5.8,"coupon_mix":0.7,"tc":490,"amt":132099},{"store_id":"TWI193","address":"新北市鶯歌區建國路153號","lat":24.9535138,"lng":121.3505023,"mix":48.4,"phone_mix":41.3,"qr_mix":5.7,"coupon_mix":1.4,"tc":400,"amt":100264},{"store_id":"TWI191","address":"台中市西區公益路163號1F~2F","lat":24.1506599,"lng":120.6534802,"mix":54.9,"phone_mix":44.6,"qr_mix":9.2,"coupon_mix":1.2,"tc":760,"amt":167748},{"store_id":"TWI190","address":"桃園市大溪區員林路一段199號","lat":24.8965051,"lng":121.2786984,"mix":57.5,"phone_mix":50.1,"qr_mix":5.7,"coupon_mix":1.7,"tc":512,"amt":154463},{"store_id":"TWI189","address":"嘉義縣民雄鄉建國路一段239號","lat":23.5594444,"lng":120.4338336,"mix":55.5,"phone_mix":44.5,"qr_mix":9.1,"coupon_mix":1.9,"tc":891,"amt":230385},{"store_id":"TWI188","address":"台北市內湖區瑞光路292號","lat":25.0761344,"lng":121.5750517,"mix":55.1,"phone_mix":44.0,"qr_mix":10.2,"coupon_mix":0.9,"tc":790,"amt":167010},{"store_id":"TWI187","address":"新北市土城區中央路二段174號1樓2樓","lat":24.9762663,"lng":121.4418919,"mix":50.1,"phone_mix":43.5,"qr_mix":5.6,"coupon_mix":1.0,"tc":616,"amt":154407},{"store_id":"TWI186","address":"屏東縣潮州鎮信義路111號","lat":22.5499793,"lng":120.5360618,"mix":52.8,"phone_mix":45.6,"qr_mix":6.3,"coupon_mix":0.9,"tc":1045,"amt":314796},{"store_id":"TWI184","address":"台中市北屯區文心路四段520號","lat":24.1720178,"lng":120.6842704,"mix":55.6,"phone_mix":46.8,"qr_mix":8.5,"coupon_mix":0.3,"tc":388,"amt":85893},{"store_id":"TWI183","address":"桃園市桃園區中山路444號","lat":24.9920512,"lng":121.3022395,"mix":59.8,"phone_mix":46.8,"qr_mix":10.6,"coupon_mix":2.4,"tc":839,"amt":216193},{"store_id":"TWI182","address":"桃園市龜山區萬壽路二段1185號","lat":24.9933339,"lng":121.3319927,"mix":50.5,"phone_mix":39.6,"qr_mix":9.0,"coupon_mix":1.8,"tc":763,"amt":198217},{"store_id":"TWI180","address":"高雄市左營區崇德路311號","lat":22.6761805,"lng":120.3027266,"mix":59.6,"phone_mix":50.3,"qr_mix":8.3,"coupon_mix":1.1,"tc":548,"amt":134837},{"store_id":"TWI178","address":"台北市信義區光復南路465號1F","lat":25.0340391,"lng":121.5576613,"mix":46.5,"phone_mix":40.4,"qr_mix":5.2,"coupon_mix":0.9,"tc":647,"amt":150349},{"store_id":"TWI177","address":"高雄市鼓山區青海路151號","lat":22.6512207,"lng":120.2881891,"mix":60.9,"phone_mix":52.5,"qr_mix":7.4,"coupon_mix":0.9,"tc":783,"amt":190916},{"store_id":"TWI176","address":"台中市西屯區福星北路1號","lat":24.182565,"lng":120.6446378,"mix":47.1,"phone_mix":37.1,"qr_mix":9.8,"coupon_mix":0.2,"tc":636,"amt":144066},{"store_id":"TWI174","address":"台北市中山區南京東路一段88號","lat":25.0518348,"lng":121.5257476,"mix":51.8,"phone_mix":43.0,"qr_mix":8.3,"coupon_mix":0.5,"tc":729,"amt":158133},{"store_id":"TWI170","address":"彰化縣和美鎮彰美路四段438號","lat":24.1056787,"lng":120.5055735,"mix":46.7,"phone_mix":42.1,"qr_mix":3.8,"coupon_mix":0.8,"tc":366,"amt":107161},{"store_id":"TWI169","address":"新北市淡水區中山路24 26號","lat":25.1734634,"lng":121.4409471,"mix":41.4,"phone_mix":35.5,"qr_mix":5.4,"coupon_mix":0.5,"tc":1191,"amt":283924},{"store_id":"TWI168","address":"高雄市鳳山區青年路二段313號","lat":22.6402075,"lng":120.3508892,"mix":92.7,"phone_mix":82.6,"qr_mix":8.6,"coupon_mix":1.5,"tc":1036,"amt":274779},{"store_id":"TWI167","address":"桃園市八德區介壽路一段808號","lat":24.9622925,"lng":121.2997579,"mix":57.0,"phone_mix":47.1,"qr_mix":8.2,"coupon_mix":1.7,"tc":749,"amt":194303},{"store_id":"TWI166","address":"台北市中正區南昌路一段12號","lat":25.0322571,"lng":121.5163101,"mix":46.2,"phone_mix":35.0,"qr_mix":10.8,"coupon_mix":0.5,"tc":1069,"amt":218413},{"store_id":"TWI165","address":"桃園市桃園區南平路330號1樓","lat":25.0182677,"lng":121.2984458,"mix":54.2,"phone_mix":41.3,"qr_mix":11.1,"coupon_mix":1.8,"tc":722,"amt":169614},{"store_id":"TWI164","address":"新北市五股區成泰路二段113號1-4樓","lat":25.08461,"lng":121.438462,"mix":48.9,"phone_mix":38.9,"qr_mix":8.1,"coupon_mix":1.9,"tc":604,"amt":146082},{"store_id":"TWI163","address":"台中市西屯區台灣大道四段1086號","lat":24.1841689,"lng":120.6149312,"mix":56.3,"phone_mix":45.4,"qr_mix":10.2,"coupon_mix":0.7,"tc":770,"amt":170598},{"store_id":"TWI161","address":"桃園市楊梅區大成路107號","lat":24.9104839,"lng":121.1455424,"mix":50.3,"phone_mix":44.2,"qr_mix":5.9,"coupon_mix":0.3,"tc":636,"amt":159041},{"store_id":"TWI160","address":"台北市士林區中正路351號","lat":25.094367,"lng":121.5223525,"mix":50.0,"phone_mix":41.3,"qr_mix":7.7,"coupon_mix":1.0,"tc":962,"amt":211942},{"store_id":"TWI159","address":"台中市台灣大道一段38號","lat":24.1383821,"lng":120.6844562,"mix":18.3,"phone_mix":15.5,"qr_mix":2.6,"coupon_mix":0.1,"tc":719,"amt":217733},{"store_id":"TWI158","address":"台南市南區金華路二段238號","lat":22.9875633,"lng":120.1917993,"mix":57.0,"phone_mix":49.7,"qr_mix":6.0,"coupon_mix":1.3,"tc":590,"amt":132747},{"store_id":"TWI156","address":"高雄市楠梓區後昌新路20號","lat":22.7185782,"lng":120.2920578,"mix":86.7,"phone_mix":77.0,"qr_mix":8.5,"coupon_mix":1.2,"tc":1112,"amt":313492},{"store_id":"TWI155","address":"台北市文山區木柵路三段82號","lat":24.9885383,"lng":121.5668635,"mix":53.3,"phone_mix":45.1,"qr_mix":6.7,"coupon_mix":1.5,"tc":874,"amt":216649},{"store_id":"TWI154","address":"新竹市東區光復路二段334號","lat":24.7959503,"lng":120.9981879,"mix":52.8,"phone_mix":43.9,"qr_mix":6.5,"coupon_mix":2.4,"tc":775,"amt":172903},{"store_id":"TWI153","address":"台北市士林區中山北路六段750號","lat":25.1156781,"lng":121.5282489,"mix":50.1,"phone_mix":44.1,"qr_mix":5.5,"coupon_mix":0.5,"tc":657,"amt":160698},{"store_id":"TWI149","address":"新北市板橋區中山路一段65號","lat":25.0096674,"lng":121.4611076,"mix":89.4,"phone_mix":78.9,"qr_mix":8.7,"coupon_mix":1.8,"tc":895,"amt":204668},{"store_id":"TWI148","address":"南投縣南投市南崗二路212號","lat":23.9184142,"lng":120.6762177,"mix":48.2,"phone_mix":40.9,"qr_mix":5.9,"coupon_mix":1.3,"tc":715,"amt":212905},{"store_id":"TWI147","address":"高雄市苓雅區五福一路22號","lat":22.6280782,"lng":120.3153254,"mix":45.3,"phone_mix":37.7,"qr_mix":6.0,"coupon_mix":1.6,"tc":510,"amt":111292},{"store_id":"TWI146","address":"台北市中正區八德路一段64號","lat":25.0439167,"lng":121.5314337,"mix":89.3,"phone_mix":79.8,"qr_mix":8.5,"coupon_mix":1.0,"tc":1296,"amt":282815},{"store_id":"TWI145","address":"台北市萬華區萬大路286號","lat":25.0254255,"lng":121.5002812,"mix":50.8,"phone_mix":40.8,"qr_mix":9.7,"coupon_mix":0.3,"tc":908,"amt":201334},{"store_id":"TWI141","address":"新北市汐止區大同路二段383號","lat":25.0673784,"lng":121.6576226,"mix":49.9,"phone_mix":42.2,"qr_mix":5.8,"coupon_mix":1.8,"tc":481,"amt":117270},{"store_id":"TWI139","address":"台南市善化區光復路51號","lat":23.1285616,"lng":120.2929423,"mix":79.8,"phone_mix":71.1,"qr_mix":7.8,"coupon_mix":0.9,"tc":760,"amt":203333},{"store_id":"TWI138","address":"宜蘭縣羅東鎮興東路90號1、2樓","lat":24.6833529,"lng":121.7701965,"mix":51.6,"phone_mix":43.7,"qr_mix":5.6,"coupon_mix":2.3,"tc":1015,"amt":278060},{"store_id":"TWI137","address":"桃園市大園區中正東路142號","lat":25.0623576,"lng":121.2014243,"mix":52.7,"phone_mix":45.0,"qr_mix":6.8,"coupon_mix":0.8,"tc":598,"amt":176970},{"store_id":"TWI136","address":"台中市大里區中興路二段478號","lat":24.1102042,"lng":120.6901132,"mix":55.1,"phone_mix":45.1,"qr_mix":8.5,"coupon_mix":1.5,"tc":923,"amt":229250},{"store_id":"TWI134","address":"台北市文山區興隆路三段9號","lat":25.0008645,"lng":121.5549971,"mix":54.1,"phone_mix":46.0,"qr_mix":7.5,"coupon_mix":0.7,"tc":719,"amt":162413},{"store_id":"TWI132","address":"台中市東區復興路4段108號","lat":24.1353951,"lng":120.6855615,"mix":44.8,"phone_mix":35.6,"qr_mix":8.8,"coupon_mix":0.4,"tc":565,"amt":149676},{"store_id":"TWI131","address":"台中市潭子區勝利路311號","lat":24.2138793,"lng":120.7004061,"mix":44.8,"phone_mix":34.5,"qr_mix":8.9,"coupon_mix":1.5,"tc":632,"amt":168629},{"store_id":"TWI129","address":"新北市汐止區中興路169號1-2樓","lat":25.0662854,"lng":121.630842,"mix":47.5,"phone_mix":43.8,"qr_mix":2.3,"coupon_mix":1.4,"tc":421,"amt":102875},{"store_id":"TWI128","address":"新北市泰山區明志路一段326號","lat":25.0590713,"lng":121.4313136,"mix":52.5,"phone_mix":43.5,"qr_mix":7.5,"coupon_mix":1.5,"tc":412,"amt":107022},{"store_id":"TWI127","address":"雲林縣斗六市民生南路169號","lat":23.7012714,"lng":120.5371346,"mix":91.2,"phone_mix":83.4,"qr_mix":7.1,"coupon_mix":0.7,"tc":726,"amt":205834},{"store_id":"TWI126","address":"新北市土城區金城路二段269號","lat":24.9860208,"lng":121.4639223,"mix":56.2,"phone_mix":46.9,"qr_mix":7.6,"coupon_mix":1.8,"tc":602,"amt":160111},{"store_id":"TWI125","address":"彰化縣鹿港鎮民權路243號","lat":24.0557224,"lng":120.4334924,"mix":41.1,"phone_mix":36.0,"qr_mix":3.7,"coupon_mix":1.5,"tc":511,"amt":134333},{"store_id":"TWI120","address":"台北市信義區莊敬路336號","lat":25.0278392,"lng":121.5638348,"mix":50.9,"phone_mix":42.0,"qr_mix":7.6,"coupon_mix":1.3,"tc":771,"amt":169008},{"store_id":"TWI110","address":"屏東市自由路496號","lat":22.6836057,"lng":120.4899278,"mix":58.9,"phone_mix":47.6,"qr_mix":9.5,"coupon_mix":1.9,"tc":771,"amt":228949},{"store_id":"TWI108","address":"南投縣草屯鎮太平路2段235號","lat":23.9751481,"lng":120.683505,"mix":52.4,"phone_mix":46.7,"qr_mix":4.9,"coupon_mix":0.8,"tc":809,"amt":220517},{"store_id":"TWI105","address":"220新北市板橋區文化路一段421巷2號","lat":25.0228311,"lng":121.4674263,"mix":92.6,"phone_mix":83.7,"qr_mix":7.2,"coupon_mix":1.8,"tc":1407,"amt":290207},{"store_id":"TWI104","address":"台北市中山區民生西路9號","lat":25.0579206,"lng":121.5216701,"mix":51.1,"phone_mix":42.3,"qr_mix":7.9,"coupon_mix":0.9,"tc":1573,"amt":314354},{"store_id":"TWI103","address":"台北市松山區南京東路五段164號","lat":25.0511737,"lng":121.5631339,"mix":88.9,"phone_mix":77.9,"qr_mix":9.3,"coupon_mix":1.7,"tc":1827,"amt":362285},{"store_id":"TWI100","address":"台南市西門路四段155號","lat":23.0098666,"lng":120.2077511,"mix":56.1,"phone_mix":46.4,"qr_mix":8.9,"coupon_mix":0.7,"tc":835,"amt":194806},{"store_id":"TWI099","address":"桃園縣蘆竹區中正路8號","lat":25.04395,"lng":121.2942316,"mix":52.8,"phone_mix":42.3,"qr_mix":9.2,"coupon_mix":1.3,"tc":587,"amt":156835},{"store_id":"TWI098","address":"桃園市桃園區大興西路二段159號(DT店)","lat":25.0101092,"lng":121.2965285,"mix":60.3,"phone_mix":45.3,"qr_mix":14.3,"coupon_mix":0.8,"tc":818,"amt":202102},{"store_id":"TWI093","address":"新北市林口區文化一路一段78號(DT店)","lat":25.0697933,"lng":121.3718508,"mix":57.4,"phone_mix":49.4,"qr_mix":7.5,"coupon_mix":0.5,"tc":896,"amt":218542},{"store_id":"TWI089","address":"高雄市前鎮區中華五路1111號","lat":22.6049566,"lng":120.3041958,"mix":48.4,"phone_mix":41.8,"qr_mix":5.8,"coupon_mix":0.7,"tc":1106,"amt":256625},{"store_id":"TWI088","address":"高雄市三民區建國三路23號","lat":22.6379839,"lng":120.3012008,"mix":32.7,"phone_mix":27.7,"qr_mix":4.2,"coupon_mix":0.8,"tc":1233,"amt":311830},{"store_id":"TWI086","address":"基隆市劉銘傳路1號","lat":25.1265787,"lng":121.7512391,"mix":57.5,"phone_mix":46.9,"qr_mix":9.1,"coupon_mix":1.6,"tc":984,"amt":237047},{"store_id":"TWI084","address":"桃園市中壢區民族路二段138號(DT店)","lat":24.9575258,"lng":121.2046857,"mix":51.7,"phone_mix":40.2,"qr_mix":10.6,"coupon_mix":0.8,"tc":941,"amt":220435},{"store_id":"TWI081","address":"台南市東區東門路二段369號","lat":22.9864807,"lng":120.2200306,"mix":58.3,"phone_mix":48.4,"qr_mix":8.5,"coupon_mix":1.3,"tc":822,"amt":188162},{"store_id":"TWI080","address":"台北市大同區承德路一段38號","lat":25.0508388,"lng":121.5167713,"mix":76.2,"phone_mix":68.3,"qr_mix":7.3,"coupon_mix":0.6,"tc":1483,"amt":300206},{"store_id":"TWI075","address":"新北市淡水區中山北路一段151號","lat":25.1774479,"lng":121.4430945,"mix":94.1,"phone_mix":85.6,"qr_mix":7.6,"coupon_mix":0.9,"tc":1520,"amt":356753},{"store_id":"TWI068","address":"台北市北投區光明路225號","lat":25.1365858,"lng":121.5041955,"mix":42.7,"phone_mix":36.7,"qr_mix":4.7,"coupon_mix":1.3,"tc":988,"amt":225833},{"store_id":"TWI067","address":"台北市內湖區內湖路一段230號","lat":25.0824106,"lng":121.5648343,"mix":91.8,"phone_mix":82.4,"qr_mix":8.7,"coupon_mix":0.7,"tc":1003,"amt":207601},{"store_id":"TWI066","address":"新竹縣竹東鎮長春路3段130號(DT店)","lat":24.7429408,"lng":121.084376,"mix":58.6,"phone_mix":49.3,"qr_mix":8.8,"coupon_mix":0.5,"tc":640,"amt":163446},{"store_id":"TWI065","address":"台東市新生路158號","lat":22.7531028,"lng":121.1477769,"mix":49.8,"phone_mix":40.5,"qr_mix":8.0,"coupon_mix":1.4,"tc":967,"amt":267992},{"store_id":"TWI064","address":"南投縣埔里鎮中正路340號","lat":23.9551694,"lng":120.9744122,"mix":46.9,"phone_mix":41.6,"qr_mix":4.1,"coupon_mix":1.2,"tc":998,"amt":281253},{"store_id":"TWI063","address":"台中市沙鹿區沙田路127號","lat":24.2357813,"lng":120.5589904,"mix":84.9,"phone_mix":75.0,"qr_mix":7.9,"coupon_mix":2.0,"tc":1043,"amt":280204},{"store_id":"TWI062","address":"桃園市龍潭區北龍路309號","lat":24.8686036,"lng":121.2183252,"mix":89.5,"phone_mix":80.1,"qr_mix":8.1,"coupon_mix":1.2,"tc":1078,"amt":283083},{"store_id":"TWI054","address":"嘉義市西區中興路396號","lat":23.48156,"lng":120.431015,"mix":61.4,"phone_mix":49.3,"qr_mix":11.1,"coupon_mix":0.9,"tc":972,"amt":242502},{"store_id":"TWI047","address":"台南市中西區中華西路二段38號","lat":22.9930302,"lng":120.1870933,"mix":55.5,"phone_mix":45.7,"qr_mix":8.5,"coupon_mix":1.4,"tc":945,"amt":222618},{"store_id":"TWI046","address":"高雄市小港區沿海一路145號","lat":22.5674596,"lng":120.3517839,"mix":53.9,"phone_mix":45.4,"qr_mix":7.1,"coupon_mix":1.4,"tc":742,"amt":205952},{"store_id":"TWI044","address":"高雄市自由二路173號","lat":22.6606257,"lng":120.3086605,"mix":55.8,"phone_mix":45.2,"qr_mix":9.6,"coupon_mix":1.0,"tc":977,"amt":205311},{"store_id":"TWI043","address":"高雄市三民區大順二路246號","lat":22.6443218,"lng":120.3264372,"mix":47.6,"phone_mix":39.7,"qr_mix":7.6,"coupon_mix":0.4,"tc":1449,"amt":323934},{"store_id":"TWI040","address":"台中市北區五權路202號","lat":25.0681359,"lng":121.4507063,"mix":94.9,"phone_mix":82.4,"qr_mix":11.3,"coupon_mix":1.1,"tc":1366,"amt":304544},{"store_id":"TWI038","address":"高雄市鳳山區五甲三路211號","lat":22.5899438,"lng":120.3244101,"mix":92.4,"phone_mix":83.2,"qr_mix":8.4,"coupon_mix":0.8,"tc":1124,"amt":289540},{"store_id":"TWI036","address":"嘉義市忠孝路489號","lat":23.504448,"lng":120.4480562,"mix":59.2,"phone_mix":50.1,"qr_mix":7.0,"coupon_mix":2.2,"tc":490,"amt":125140},{"store_id":"TWI035","address":"台中市南屯區五權西路二段136號","lat":24.1403347,"lng":120.6515536,"mix":94.4,"phone_mix":82.6,"qr_mix":9.4,"coupon_mix":2.4,"tc":1068,"amt":242182},{"store_id":"TWI031","address":"彰化市金馬路二段425號","lat":24.0938006,"lng":120.5406838,"mix":58.0,"phone_mix":47.2,"qr_mix":9.6,"coupon_mix":1.1,"tc":739,"amt":197451},{"store_id":"TWI025","address":"苗栗市中正路880號&光復路1號","lat":24.5520001,"lng":120.8160427,"mix":46.2,"phone_mix":38.3,"qr_mix":7.3,"coupon_mix":0.5,"tc":735,"amt":211942},{"store_id":"TWI023","address":"新北市中和區興南路一段79號","lat":24.9890895,"lng":121.5100902,"mix":50.7,"phone_mix":42.4,"qr_mix":7.6,"coupon_mix":0.7,"tc":965,"amt":206715},{"store_id":"TWI021","address":"台中市西屯區永福路120號","lat":24.1845771,"lng":120.6210668,"mix":53.4,"phone_mix":44.5,"qr_mix":7.9,"coupon_mix":1.0,"tc":1022,"amt":233427},{"store_id":"TWI019","address":"新北市板橋區中山路二段249號","lat":25.0176503,"lng":121.4773201,"mix":53.2,"phone_mix":45.6,"qr_mix":7.2,"coupon_mix":0.3,"tc":840,"amt":205890},{"store_id":"TWI013","address":"新竹市光復路一段536號","lat":24.7868213,"lng":121.0109253,"mix":92.5,"phone_mix":82.8,"qr_mix":9.2,"coupon_mix":0.6,"tc":786,"amt":208132},{"store_id":"TWI012","address":"台南市永康區中華路145號","lat":23.0029976,"lng":120.2349335,"mix":90.4,"phone_mix":78.8,"qr_mix":9.8,"coupon_mix":1.8,"tc":1260,"amt":309742},{"store_id":"TWI011","address":"新北市樹林區中山路一段67號","lat":24.9918116,"lng":121.4238054,"mix":52.6,"phone_mix":41.3,"qr_mix":9.6,"coupon_mix":1.6,"tc":959,"amt":253417},{"store_id":"TWI010","address":"台中市文心路四段153號","lat":24.1737374,"lng":120.6765196,"mix":59.0,"phone_mix":51.1,"qr_mix":6.4,"coupon_mix":1.4,"tc":1001,"amt":232463},{"store_id":"TWI008","address":"新北市永和區中正路294號","lat":24.999028,"lng":121.5171833,"mix":54.2,"phone_mix":45.9,"qr_mix":7.7,"coupon_mix":0.6,"tc":1048,"amt":223505},{"store_id":"TWI007","address":"彰化市中山路二段126號","lat":24.0680971,"lng":120.5403478,"mix":56.5,"phone_mix":47.7,"qr_mix":7.2,"coupon_mix":1.7,"tc":732,"amt":183319},{"store_id":"TWB600","address":"新北市淡水區民權路41號","lat":25.1403924,"lng":121.4601087,"mix":58.3,"phone_mix":52.1,"qr_mix":6.0,"coupon_mix":0.2,"tc":717,"amt":165184},{"store_id":"TWB594","address":"新竹市忠孝路300號(大潤發)","lat":24.8058445,"lng":120.9848959,"mix":58.1,"phone_mix":48.9,"qr_mix":7.5,"coupon_mix":1.7,"tc":1360,"amt":328318},{"store_id":"TWB593","address":"台中市大雅區中清路三段1215號","lat":24.2253058,"lng":120.6451771,"mix":49.1,"phone_mix":40.3,"qr_mix":7.7,"coupon_mix":1.1,"tc":863,"amt":231886},{"store_id":"TWB587","address":"新竹市民生路 306 號(DT店)","lat":24.8136776,"lng":120.974607,"mix":93.8,"phone_mix":82.8,"qr_mix":9.1,"coupon_mix":1.8,"tc":748,"amt":196964},{"store_id":"TWB585","address":"台中市大里區國光路二段75號1-3樓","lat":24.1005816,"lng":120.6822267,"mix":61.9,"phone_mix":52.7,"qr_mix":7.5,"coupon_mix":1.8,"tc":902,"amt":228500},{"store_id":"TWB582","address":"雲林縣虎尾鎮中正路30號B1-4樓","lat":23.7096663,"lng":120.4365752,"mix":92.0,"phone_mix":84.5,"qr_mix":6.5,"coupon_mix":1.0,"tc":1203,"amt":358297},{"store_id":"TWB570","address":"台南縣永康市中正北路126號(DT店)","lat":25.0888501,"lng":121.4661328,"mix":52.4,"phone_mix":43.8,"qr_mix":8.2,"coupon_mix":0.4,"tc":841,"amt":218760},{"store_id":"TWB562","address":"新竹縣竹北市光明六路69號(DT店)","lat":24.8262563,"lng":121.0108103,"mix":91.9,"phone_mix":83.2,"qr_mix":7.7,"coupon_mix":1.1,"tc":703,"amt":184550},{"store_id":"TWB559","address":"高雄市苓雅區三多二路193號","lat":22.6197109,"lng":120.3227504,"mix":50.2,"phone_mix":40.6,"qr_mix":8.9,"coupon_mix":0.7,"tc":627,"amt":152597},{"store_id":"TWB556","address":"台南市東區崇明路376號","lat":22.9752993,"lng":120.2225443,"mix":60.4,"phone_mix":49.8,"qr_mix":9.4,"coupon_mix":1.2,"tc":700,"amt":165256},{"store_id":"TWB553","address":"高雄市岡山區岡山路271號1-3樓","lat":22.7938705,"lng":120.2956262,"mix":50.7,"phone_mix":43.8,"qr_mix":5.2,"coupon_mix":1.7,"tc":1132,"amt":319061},{"store_id":"TWB550","address":"嘉義市垂楊路460號","lat":23.4744521,"lng":120.457685,"mix":87.9,"phone_mix":78.5,"qr_mix":7.8,"coupon_mix":1.7,"tc":1232,"amt":332054},{"store_id":"TWB544","address":"桃園市中壢區中和路106號","lat":24.9541857,"lng":121.2256268,"mix":20.1,"phone_mix":17.7,"qr_mix":1.8,"coupon_mix":0.7,"tc":1291,"amt":349686},{"store_id":"TWB533","address":"台北市文林路88號","lat":25.0872922,"lng":121.5259863,"mix":42.3,"phone_mix":35.0,"qr_mix":6.3,"coupon_mix":1.0,"tc":1264,"amt":273816},{"store_id":"TWB528","address":"台中市豐原區中正路46號","lat":24.2529494,"lng":120.7216426,"mix":85.5,"phone_mix":78.0,"qr_mix":6.5,"coupon_mix":0.9,"tc":1195,"amt":335827},{"store_id":"TWB522","address":"新北市新店區北新路2段61號1樓","lat":24.973314,"lng":121.5427192,"mix":88.7,"phone_mix":78.6,"qr_mix":8.9,"coupon_mix":1.2,"tc":1395,"amt":333754},{"store_id":"TWB506","address":"屏東市逢甲路72號1-3樓","lat":22.6706488,"lng":120.4870772,"mix":50.4,"phone_mix":44.3,"qr_mix":4.0,"coupon_mix":2.1,"tc":725,"amt":200594},{"store_id":"TWI238","address":"高雄市橋頭區成功南路41-1號","lat":22.7547794,"lng":120.311403,"mix":53.0,"phone_mix":43.7,"qr_mix":8.7,"coupon_mix":0.7,"tc":418,"amt":112997},{"store_id":"TWI236","address":"嘉義縣朴子市山通路210、212號1樓","lat":23.4640931,"lng":120.2416782,"mix":45.8,"phone_mix":39.4,"qr_mix":5.9,"coupon_mix":0.5,"tc":447,"amt":140380},{"store_id":"TWI215","address":"814高雄市仁武區仁雄路86-43號","lat":22.6773591,"lng":120.3455206,"mix":52.6,"phone_mix":46.3,"qr_mix":4.8,"coupon_mix":1.5,"tc":440,"amt":114054},{"store_id":"TWI212","address":"彰化縣花壇鄉花壇村中山路一段385-1號","lat":24.0238929,"lng":120.5410467,"mix":48.8,"phone_mix":39.3,"qr_mix":8.1,"coupon_mix":1.4,"tc":334,"amt":95508},{"store_id":"TWI210","address":"台中市清水區中華路445-1號1樓","lat":24.27362,"lng":120.5691893,"mix":57.3,"phone_mix":49.0,"qr_mix":7.5,"coupon_mix":0.8,"tc":542,"amt":145092},{"store_id":"TWI209","address":"320桃園市中壢區環中東路二段150~154號1樓","lat":24.9495571,"lng":121.2371108,"mix":55.3,"phone_mix":45.8,"qr_mix":8.2,"coupon_mix":1.2,"tc":743,"amt":194663},{"store_id":"TWI207","address":"台南市永康區大灣路843,845號","lat":22.9994872,"lng":120.2558613,"mix":49.2,"phone_mix":43.1,"qr_mix":4.6,"coupon_mix":1.5,"tc":533,"amt":141247},{"store_id":"TWI206","address":"台中市北屯區中清路二段915,917號","lat":24.1879229,"lng":120.6624245,"mix":57.1,"phone_mix":46.2,"qr_mix":9.6,"coupon_mix":1.2,"tc":503,"amt":115439},{"store_id":"TWI185","address":"台中市西屯區文心路3段119-1號","lat":24.1688142,"lng":120.6549284,"mix":55.6,"phone_mix":43.3,"qr_mix":11.6,"coupon_mix":0.7,"tc":421,"amt":112229},{"store_id":"TWI181","address":"新北市板橋區雙十路二段170 , 170-1 , 170-2 , 170-3號","lat":25.0296075,"lng":121.4729999,"mix":58.9,"phone_mix":51.4,"qr_mix":6.5,"coupon_mix":1.0,"tc":968,"amt":205178},{"store_id":"TWI179","address":"桃園市蘆竹區大竹路428-1號","lat":25.0210477,"lng":121.2641637,"mix":56.0,"phone_mix":44.0,"qr_mix":10.8,"coupon_mix":1.2,"tc":496,"amt":131458},{"store_id":"TWI173","address":"苗栗縣竹南鎮博愛街320-1號","lat":24.6877919,"lng":120.8707023,"mix":48.1,"phone_mix":40.6,"qr_mix":6.1,"coupon_mix":1.4,"tc":716,"amt":203705},{"store_id":"TWI172","address":"台中市南屯區五權西路二段931,933號","lat":24.1447296,"lng":120.6332364,"mix":57.1,"phone_mix":45.5,"qr_mix":10.2,"coupon_mix":1.3,"tc":530,"amt":141289},{"store_id":"TWI171","address":"台中市西屯區河南路二段363-7, 363-8號1+2樓","lat":24.1716853,"lng":120.6448636,"mix":64.0,"phone_mix":50.2,"qr_mix":11.5,"coupon_mix":2.3,"tc":852,"amt":198543},{"store_id":"TWI162","address":"新北市三重區正義北路139,141號1樓","lat":25.0666904,"lng":121.4966992,"mix":60.0,"phone_mix":48.7,"qr_mix":9.8,"coupon_mix":1.5,"tc":873,"amt":200782},{"store_id":"TWI152","address":"242新北市新莊區中正路516-3號","lat":25.0321178,"lng":121.4323947,"mix":47.4,"phone_mix":40.5,"qr_mix":5.4,"coupon_mix":1.5,"tc":913,"amt":203130},{"store_id":"TWI151","address":"新北市永和區中山路一段173,175號","lat":25.0091984,"lng":121.5097996,"mix":52.5,"phone_mix":42.2,"qr_mix":9.7,"coupon_mix":0.6,"tc":756,"amt":168079},{"store_id":"TWI150","address":"台南市東區大學路20號","lat":22.9959339,"lng":120.2209893,"mix":48.1,"phone_mix":38.3,"qr_mix":8.4,"coupon_mix":1.4,"tc":732,"amt":155644},{"store_id":"TWI144","address":"新竹縣竹北市自強南路95,97號","lat":24.81635,"lng":121.0257083,"mix":56.0,"phone_mix":47.7,"qr_mix":7.4,"coupon_mix":0.9,"tc":525,"amt":142050},{"store_id":"TWI143","address":"台南市安南區海佃路一段138、140號","lat":23.0237448,"lng":120.1919727,"mix":54.2,"phone_mix":46.3,"qr_mix":6.7,"coupon_mix":1.3,"tc":594,"amt":150310},{"store_id":"TWI142","address":"桃園市桃園區桃鶯路263-1,265號","lat":24.9836791,"lng":121.3188135,"mix":52.2,"phone_mix":39.9,"qr_mix":12.0,"coupon_mix":0.3,"tc":648,"amt":174067},{"store_id":"TWI140","address":"宜蘭縣宜蘭市舊城南路2之3號","lat":24.7551309,"lng":121.7507247,"mix":92.8,"phone_mix":82.8,"qr_mix":8.3,"coupon_mix":1.7,"tc":729,"amt":208901},{"store_id":"TWI135","address":"台北南港區三重路11號","lat":25.0585767,"lng":121.613323,"mix":52.4,"phone_mix":39.7,"qr_mix":11.8,"coupon_mix":0.9,"tc":400,"amt":82415},{"store_id":"TWI133","address":"新竹縣新豐鄉新興路163-5號","lat":24.86799,"lng":120.9937135,"mix":63.3,"phone_mix":55.9,"qr_mix":7.1,"coupon_mix":0.3,"tc":1046,"amt":298662},{"store_id":"TWI119","address":"新北市三峽區大學路150-3號","lat":24.9446484,"lng":121.3743049,"mix":93.2,"phone_mix":83.3,"qr_mix":7.9,"coupon_mix":2.0,"tc":1043,"amt":250867},{"store_id":"TWI115","address":"新北市新莊區幸福路763之6號","lat":25.0488024,"lng":121.4478812,"mix":54.6,"phone_mix":47.6,"qr_mix":5.8,"coupon_mix":1.2,"tc":1096,"amt":258121},{"store_id":"TWI097","address":"新北市三重區重新路二段1-1號","lat":25.063194,"lng":121.4996383,"mix":85.9,"phone_mix":76.8,"qr_mix":6.8,"coupon_mix":2.3,"tc":1267,"amt":286920},{"store_id":"TWI095","address":"中壢區環中東路249號(DT店)","lat":24.9631857,"lng":121.256971,"mix":91.4,"phone_mix":79.7,"qr_mix":11.0,"coupon_mix":0.8,"tc":1018,"amt":285779},{"store_id":"TWI083","address":"花蓮市中正路637-1號","lat":23.9795314,"lng":121.6104138,"mix":54.1,"phone_mix":43.0,"qr_mix":9.5,"coupon_mix":1.5,"tc":958,"amt":290879},{"store_id":"TWI071","address":"台中市烏日區九德村中山路一段450號","lat":24.1074109,"lng":120.6361808,"mix":48.0,"phone_mix":39.7,"qr_mix":7.7,"coupon_mix":0.7,"tc":1011,"amt":226502},{"store_id":"TWI069","address":"台中市太平區中山路四段26-6","lat":24.1501091,"lng":120.7127885,"mix":56.7,"phone_mix":44.9,"qr_mix":10.9,"coupon_mix":0.9,"tc":935,"amt":251457},{"store_id":"TWI056","address":"新北市中和區中山路2段228-1號(大潤發)","lat":25.0033164,"lng":121.4991345,"mix":56.7,"phone_mix":44.4,"qr_mix":10.4,"coupon_mix":1.8,"tc":813,"amt":183516},{"store_id":"TWI041","address":"桃園市楊梅區中山北路二段6-1號(DT店)","lat":24.9129728,"lng":121.1763969,"mix":56.7,"phone_mix":48.7,"qr_mix":7.3,"coupon_mix":0.7,"tc":721,"amt":207152},{"store_id":"TWI024","address":"新北市新莊區中港路311-313號","lat":25.0446477,"lng":121.4525373,"mix":56.8,"phone_mix":49.7,"qr_mix":6.0,"coupon_mix":1.1,"tc":1054,"amt":247290},{"store_id":"TWI022","address":"新北市三重區三和路四段193-195號","lat":25.0792904,"lng":121.4823549,"mix":93.6,"phone_mix":84.0,"qr_mix":8.9,"coupon_mix":0.7,"tc":1249,"amt":292440},{"store_id":"TWI018","address":"桃園市龜山區復興一路110-112號(DT店)","lat":25.0589572,"lng":121.3675604,"mix":70.2,"phone_mix":60.6,"qr_mix":8.7,"coupon_mix":0.8,"tc":1484,"amt":355043},{"store_id":"TWB597","address":"台南市新營區中正路6-1號","lat":23.3077837,"lng":120.3172901,"mix":50.3,"phone_mix":43.1,"qr_mix":6.2,"coupon_mix":1.0,"tc":746,"amt":177094},{"store_id":"TWB580","address":"苗栗縣頭份鎮中華路1243、1245號1樓(DT店)","lat":24.7034982,"lng":120.9224243,"mix":54.1,"phone_mix":43.7,"qr_mix":7.9,"coupon_mix":2.5,"tc":526,"amt":153427},{"store_id":"TWB576","address":"高雄市楠梓區建楠路150-152號","lat":22.7271339,"lng":120.3268145,"mix":84.7,"phone_mix":74.4,"qr_mix":8.3,"coupon_mix":2.0,"tc":1084,"amt":297130},{"store_id":"TWB568","address":"彰化縣員林鎮民權街26、28號","lat":23.9595285,"lng":120.5711453,"mix":85.4,"phone_mix":78.6,"qr_mix":5.5,"coupon_mix":1.3,"tc":1186,"amt":303267},{"store_id":"TWB561","address":"新北市新店區光明街1之1號","lat":24.959104,"lng":121.5382241,"mix":45.0,"phone_mix":38.2,"qr_mix":5.8,"coupon_mix":1.1,"tc":867,"amt":222523},{"store_id":"TWB516","address":"中壢區中正路161號","lat":24.9552418,"lng":121.2215619,"mix":54.2,"phone_mix":44.6,"qr_mix":8.5,"coupon_mix":1.1,"tc":827,"amt":217984}];
+
+// Compute stats
+const mixes = STORES.map(s => s.mix);
+const totalAmt = STORES.reduce((a, s) => a + s.amt, 0);
+const totalMemberAmt = STORES.reduce((a, s) => a + s.amt * s.mix / 100, 0);
+const overallMix = (totalMemberAmt / totalAmt * 100).toFixed(1);
+const maxMix = Math.max(...mixes);
+const minMix = Math.min(...mixes);
+
+document.getElementById('stat-avg').textContent = overallMix + '%';
+document.getElementById('stat-high').textContent = maxMix.toFixed(1) + '%';
+document.getElementById('stat-low').textContent = minMix.toFixed(1) + '%';
+
+// Init map
+const map = L.map('map', {
+  center: [23.9, 121.0],
+  zoom: 8,
+  zoomControl: true,
+});
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '© OpenStreetMap contributors, © CARTO',
+  subdomains: 'abcd',
+  maxZoom: 19,
+}).addTo(map);
+
+// Heatmap layer — weight by member mix
+const heatData = STORES.map(s => [s.lat, s.lng, s.mix / 100]);
+const heatLayer = L.heatLayer(heatData, {
+  radius: 28,
+  blur: 22,
+  maxZoom: 13,
+  max: 1.0,
+  gradient: {
+    0.0:  '#ffffff',
+    0.1:  '#3d0099',
+    0.2:  '#0033cc',
+    0.3:  '#0088ee',
+    0.4:  '#00ccbb',
+    0.5:  '#22dd55',
+    0.6:  '#aaee00',
+    0.7:  '#ffcc00',
+    0.8:  '#ff6600',
+    1.0:  '#ff1111'
+  }
+}).addTo(map);
+
+// Dot markers
+function getMixColor(mix) {
+  if (mix >= 90) return '#ff1111';
+  if (mix >= 80) return '#ff6600';
+  if (mix >= 70) return '#ffcc00';
+  if (mix >= 60) return '#aaee00';
+  if (mix >= 50) return '#22dd55';
+  if (mix >= 40) return '#00ccbb';
+  if (mix >= 30) return '#0088ee';
+  if (mix >= 20) return '#0033cc';
+  if (mix >= 10) return '#3d0099';
+  return '#ffffff';
+}
+
+const tooltip = document.getElementById('tooltip');
+const markers = [];
+
+STORES.forEach(s => {
+  const color = getMixColor(s.mix);
+  const size = Math.max(8, Math.min(18, s.tc / 120));
+  
+  const circle = L.circleMarker([s.lat, s.lng], {
+    radius: size,
+    fillColor: color,
+    color: 'rgba(255,255,255,0.6)',
+    weight: 1.5,
+    fillOpacity: 0.85,
+  }).addTo(map);
+  
+  circle.on('mouseover', function(e) {
+    const barColor = getMixColor(s.mix);
+    tooltip.style.display = 'block';
+    tooltip.innerHTML = `
+      <div class="tip-id">${s.store_id}</div>
+      <div class="tip-addr">${s.address}</div>
+      <div class="tip-main" style="color:${barColor}">${s.mix}%</div>
+      <div class="tip-row"><span class="tip-label">📱 手機登入</span><span class="tip-value">${s.phone_mix}%</span></div>
+      <div class="tip-row"><span class="tip-label">📷 QR Code</span><span class="tip-value">${s.qr_mix}%</span></div>
+      <div class="tip-row"><span class="tip-label">🎫 優惠券</span><span class="tip-value">${s.coupon_mix}%</span></div>
+      <div class="tip-row"><span class="tip-label">來客數 TC</span><span class="tip-value">${s.tc.toLocaleString()}</span></div>
+      <div class="tip-row"><span class="tip-label">銷售額</span><span class="tip-value">NT$ ${s.amt.toLocaleString()}</span></div>
+      <div class="mix-bar"><div class="mix-fill" style="width:${s.mix}%;background:${barColor}"></div></div>
+    `;
+  });
+  
+  circle.on('mousemove', function(e) {
+    const x = e.originalEvent.clientX;
+    const y = e.originalEvent.clientY;
+    tooltip.style.left = (x + 16) + 'px';
+    tooltip.style.top = (y - 10) + 'px';
+  });
+  
+  circle.on('mouseout', function() {
+    tooltip.style.display = 'none';
+  });
+  
+  markers.push(circle);
+});
+
+// Toggle functions
+let heatVisible = true, dotsVisible = true;
+function toggleHeat() {
+  if (heatVisible) { map.removeLayer(heatLayer); document.getElementById('btnHeat').classList.remove('active'); }
+  else { heatLayer.addTo(map); document.getElementById('btnHeat').classList.add('active'); }
+  heatVisible = !heatVisible;
+}
+function toggleDots() {
+  if (dotsVisible) {
+    markers.forEach(m => map.removeLayer(m));
+    document.getElementById('btnDots').classList.remove('active');
+  } else {
+    markers.forEach(m => m.addTo(map));
+    document.getElementById('btnDots').classList.add('active');
+  }
+  dotsVisible = !dotsVisible;
+}
+</script>
+  </body>
+</html>
