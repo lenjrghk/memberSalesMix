@@ -473,10 +473,11 @@ function renderMarkers(stores) {
         <div class="tip-row"><span class="tip-label">📱 手機登入</span><span class="tip-value">${formatPercent(s.phone_mix)}</span></div>
         <div class="tip-row"><span class="tip-label">📷 QR Code</span><span class="tip-value">${formatPercent(s.qr_mix)}</span></div>
         <div class="tip-row"><span class="tip-label">🎫 優惠券</span><span class="tip-value">${formatPercent(s.coupon_mix)}</span></div>
-        <div class="tip-row"><span class="tip-label">來客數 TC</span><span class="tip-value">${(Number.isFinite(s.tc) ? s.tc : 0).toLocaleString()}</span></div>
         <div class="tip-row"><span class="tip-label">銷售額</span><span class="tip-value">NT$ ${(Number.isFinite(s.amt) ? s.amt : 0).toLocaleString()}</span></div>
         <div class="mix-bar"><div class="mix-fill" style="width:${Math.max(0, Math.min(100, s.mix))}%;background:${barColor}"></div></div>
       `;
+      // <div class="tip-row"><span class="tip-label">來客數 TC</span><span class="tip-value">${(Number.isFinite(s.tc) ? s.tc : 0).toLocaleString()}</span></div>
+
     });
 
     circle.on('mousemove', function(e) {
