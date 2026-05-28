@@ -208,13 +208,13 @@
       <div class="filter-group">
         <label>店型 StoreType</label>
         <select id="filterStoreType">
-          <option value="">全部</option>
+          <option value>全部</option>
         </select>
       </div>
       <div class="filter-group">
         <label>設備 Hardware</label>
         <select id="filterHardware">
-          <option value="">全部</option>
+          <option value>全部</option>
         </select>
       </div>
       <button class="toggle-btn active" id="btnHeat" onclick="toggleHeat()">🌡
@@ -229,13 +229,15 @@ const STORES = [{"store_id":"TWI249","address":"高雄市小港區中安路771�
 
 // Date configs and selectors
 const DATE_CONFIGS = [
-  { key: '20260514~0519', label: '2026/05/14–05/19', hasBreakdown: true },
-  { key: '20260501~0518', label: '2026/05/01–05/18', hasBreakdown: false },
+  { key: '20260521~0527', label: '2026/05/21–05/27', hasBreakdown: false },
+  { key: '20260514~0520', label: '2026/05/14–05/20', hasBreakdown: false },
+  // { key: '20260501~0518', label: '2026/05/01–05/18', hasBreakdown: false },
   { key: '202604', label: '2026/04', hasBreakdown: false },
   { key: '202603', label: '2026/03', hasBreakdown: false },
   { key: '202602', label: '2026/02', hasBreakdown: false },
   { key: '202601', label: '2026/01', hasBreakdown: false },
   { key: '202512', label: '2025/12', hasBreakdown: false },
+  { key: '20260514~0519', label: 'GA4-2026/05/14–05/19', hasBreakdown: true },
 ];
 
 const DATE_MAP = Object.fromEntries(DATE_CONFIGS.map(cfg => [cfg.key, cfg]));
