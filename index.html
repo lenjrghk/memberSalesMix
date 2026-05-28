@@ -53,6 +53,8 @@
     padding: 16px;
     backdrop-filter: blur(10px);
     width: 230px;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
   }
   #controls h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; margin-bottom: 12px; }
   .legend-row {
@@ -81,6 +83,27 @@
     font-size: 11px;
   }
   .mini-btn:hover { background: #334155; }
+  .filter-group {
+    margin: 8px 0 4px;
+    padding-top: 8px;
+    border-top: 1px solid #334155;
+  }
+  .filter-group label {
+    display: block;
+    font-size: 11px;
+    color: #94a3b8;
+    margin-bottom: 6px;
+  }
+  .filter-group select {
+    width: 100%;
+    background: #0f172a;
+    color: #e2e8f0;
+    border: 1px solid #475569;
+    border-radius: 8px;
+    padding: 5px 6px;
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
   .range-box {
     margin: 8px 0 4px;
     padding-top: 8px;
@@ -182,6 +205,18 @@
           <input id="storeRangeEnd" type="number" min="1" placeholder="結束">
         </div>
       </div>
+      <div class="filter-group">
+        <label>店型 StoreType</label>
+        <select id="filterStoreType">
+          <option value="">全部</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>設備 Hardware</label>
+        <select id="filterHardware">
+          <option value="">全部</option>
+        </select>
+      </div>
       <button class="toggle-btn active" id="btnHeat" onclick="toggleHeat()">🌡
         熱力圖</button>
       <button class="toggle-btn active" id="btnDots" onclick="toggleDots()">📍
@@ -212,6 +247,8 @@ const legendSelectAllBtn = document.getElementById('legendSelectAll');
 const legendClearAllBtn = document.getElementById('legendClearAll');
 const storeRangeStartInput = document.getElementById('storeRangeStart');
 const storeRangeEndInput = document.getElementById('storeRangeEnd');
+const filterStoreTypeEl = document.getElementById('filterStoreType');
+const filterHardwareEl = document.getElementById('filterHardware');
 
 const MIX_BANDS = [
   { min: 0, max: 10, color: '#ffffff', label: '0 – 10%' },
@@ -254,6 +291,8 @@ function buildStores(dateKey) {
       coupon_mix: metrics.coupon_mix ? metrics.coupon_mix[idx] : null,
       tc,
       amt,
+      store_type: STORE_TYPE[idx] || '',
+      hardware: STORE_HW[idx] || '',
     };
   });
 }
@@ -347,11 +386,15 @@ function getStoreRange() {
 
 function filterStores(stores) {
   const { start, end } = getStoreRange();
+  const typeFilter = filterStoreTypeEl.value;
+  const hwFilter = filterHardwareEl.value;
   return stores.filter((s) => {
     if (!selectedBandIndexes.has(getBandIndex(s.mix))) return false;
     const numericId = parseStoreNumericId(s.store_id);
     if (start !== null && Number.isFinite(numericId) && numericId < start) return false;
     if (end !== null && Number.isFinite(numericId) && numericId > end) return false;
+    if (typeFilter && s.store_type !== typeFilter) return false;
+    if (hwFilter && s.hardware !== hwFilter) return false;
     return true;
   });
 }
@@ -422,7 +465,7 @@ function renderMarkers(stores) {
       const barColor = getMixColor(s.mix);
       tooltip.style.display = 'block';
       tooltip.innerHTML = `
-        <div class="tip-id">${s.store_id}</div>
+        <div class="tip-id">${s.store_id} · ${s.store_type} · ${s.hardware}</div>
         <div class="tip-addr">${s.address}</div>
         <div class="tip-main" style="color:${barColor}">${formatPercent(s.mix)}</div>
         <div class="tip-row"><span class="tip-label">📱 手機登入</span><span class="tip-value">${formatPercent(s.phone_mix)}</span></div>
@@ -493,6 +536,27 @@ legendClearAllBtn.addEventListener('click', () => {
 });
 storeRangeStartInput.addEventListener('input', applyCurrentFilters);
 storeRangeEndInput.addEventListener('input', applyCurrentFilters);
+filterStoreTypeEl.addEventListener('change', applyCurrentFilters);
+filterHardwareEl.addEventListener('change', applyCurrentFilters);
+
+// Populate StoreType and Hardware dropdowns from data
+(function populateFilterDropdowns() {
+  const types = [...new Set(STORE_TYPE)].sort();
+  const hws = [...new Set(STORE_HW)].sort();
+  types.forEach(t => {
+    if (!t) return;
+    const opt = document.createElement('option');
+    opt.value = t; opt.textContent = t;
+    filterStoreTypeEl.appendChild(opt);
+  });
+  hws.forEach(h => {
+    if (!h) return;
+    const opt = document.createElement('option');
+    opt.value = h; opt.textContent = h;
+    filterHardwareEl.appendChild(opt);
+  });
+})();
+
 renderLegendFilters();
 applyDate(DATE_CONFIGS[0].key);
 </script>
