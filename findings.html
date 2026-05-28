@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一般店 Revamp 後會員銷售掉落分析報告</title>
+    <script
+      src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="store_data.js"></script>
+    <style>
+    :root {
+      --bg: #0f172a; --card: #1e293b; --border: #334155;
+      --text: #e2e8f0; --muted: #94a3b8; --dim: #64748b;
+      --blue: #38bdf8; --red: #f87171; --green: #4ade80;
+      --orange: #fb923c; --purple: #c084fc; --yellow: #fbbf24;
+      --cyan: #22d3ee;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+      background: var(--bg); color: var(--text);
+      line-height: 1.6;
+    }
+    .container { max-width: 1280px; margin: 0 auto; padding: 24px 20px; }
+
+    /* Header */
+    .report-header {
+      text-align: center; padding: 48px 20px 36px;
+      background: linear-gradient(180deg, #1e293b 0%, var(--bg) 100%);
+      border-bottom: 1px solid var(--border);
+    }
+    .report-header h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+    .report-header h1 span { color: var(--red); }
+    .report-header .subtitle { color: var(--muted); font-size: 14px; }
+    .report-header .date { color: var(--dim); font-size: 12px; margin-top: 4px; }
+
+    /* KPI row */
+    .kpi-row {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+      margin: 32px 0;
+    }
+    .kpi {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px; text-align: center;
+    }
+    .kpi .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .kpi .value { font-size: 32px; font-weight: 800; }
+    .kpi .delta { font-size: 13px; margin-top: 4px; }
+    .kpi .value.red { color: var(--red); }
+    .kpi .value.green { color: var(--green); }
+    .kpi .value.blue { color: var(--blue); }
+    .kpi .value.orange { color: var(--orange); }
+    .kpi .delta.red { color: var(--red); }
+    .kpi .delta.green { color: var(--green); }
+
+    /* Section */
+    .section {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 24px; margin-bottom: 24px;
+    }
+    .section h2 {
+      font-size: 16px; font-weight: 700; margin-bottom: 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section h2 .icon { font-size: 20px; }
+    .section h3 { font-size: 14px; font-weight: 600; color: var(--muted); margin: 16px 0 8px; }
+
+    /* Chart wrapper */
+    .chart-wrap { position: relative; height: 300px; margin: 12px 0; }
+    .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .chart-row .chart-wrap { height: 280px; }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 10px 12px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+    td { padding: 8px 12px; border-bottom: 1px solid rgba(51,65,85,0.5); }
+    tr:hover td { background: rgba(56, 189, 248, 0.05); }
+    .mono { font-family: "SF Mono", "Fira Code", monospace; }
+    .text-red { color: var(--red); }
+    .text-green { color: var(--green); }
+    .text-orange { color: var(--orange); }
+    .text-blue { color: var(--blue); }
+
+    /* Insight callout */
+    .insight {
+      background: rgba(251, 191, 36, 0.08);
+      border-left: 3px solid var(--yellow);
+      border-radius: 0 8px 8px 0;
+      padding: 14px 18px; margin: 16px 0;
+      font-size: 13px; color: var(--yellow);
+    }
+    .insight strong { color: #fcd34d; }
+
+    /* Conclusion box */
+    .conclusion {
+      background: rgba(248, 113, 113, 0.08);
+      border: 1px solid rgba(248, 113, 113, 0.3);
+      border-radius: 12px; padding: 24px; margin: 24px 0;
+    }
+    .conclusion h2 { color: var(--red); }
+
+    /* Next steps */
+    .steps { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+    .step {
+      background: rgba(56, 189, 248, 0.06);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: 10px; padding: 16px;
+    }
+    .step .num { display: inline-block; width: 24px; height: 24px; background: var(--blue); color: var(--bg); border-radius: 50%; text-align: center; line-height: 24px; font-size: 12px; font-weight: 700; margin-bottom: 8px; }
+    .step h4 { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+    .step p { font-size: 12px; color: var(--muted); }
+
+    /* Bar sparkline in table */
+    .bar-cell { display: flex; align-items: center; gap: 8px; }
+    .bar-bg { height: 6px; border-radius: 3px; background: rgba(51,65,85,0.8); flex: 1; max-width: 120px; }
+    .bar-fill { height: 100%; border-radius: 3px; }
+
+    @media (max-width: 900px) {
+      .kpi-row { grid-template-columns: repeat(2, 1fr); }
+      .chart-row { grid-template-columns: 1fr; }
+      .steps { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .kpi-row { grid-template-columns: 1fr; }
+    }
+  </style>
+  </head>
+  <body>
+
+    <div class="report-header">
+      <h1>一般店 Revamp 後<span>會員銷售掉落</span>分析報告</h1>
+      <div class="subtitle">Kiosk Member Sales Mix — 一般店 vs 數位店 深度比對</div>
+      <div class="date">數據期間：2025/12 – 2026/05 ｜ 報告產出：2026/05/29</div>
+    </div>
+
+    <div class="container">
+      <!-- KPI Row -->
+      <div class="kpi-row" style="grid-template-columns: repeat(5,1fr)">
+        <div class="kpi">
+          <div class="label">一般店 Mix 掉幅 (2月→3月)</div>
+          <div class="value red" id="kpi-drop">-</div>
+          <div class="delta red">61.1% → 52.5%</div>
+        </div>
+        <div class="kpi">
+          <div class="label">會員銷售額變化</div>
+          <div class="value red" id="kpi-member-amt">-</div>
+          <div class="delta red">291.3M → 222.7M</div>
+        </div>
+        <div class="kpi">
+          <div class="label">非會員銷售額變化</div>
+          <div class="value green" id="kpi-nonmember-amt">-</div>
+          <div class="delta green">187.1M → 204.7M</div>
+        </div>
+        <div class="kpi">
+          <div class="label">受影響門店比例</div>
+          <div class="value orange" id="kpi-affected">-</div>
+          <div class="delta">162 家一般店中跌幅 > 5%</div>
+        </div>
+        <div class="kpi" style="border-color: rgba(74,222,128,0.4);">
+          <div class="label">5月最新 Mix（21-27日）</div>
+          <div class="value green" id="kpi-may-mix">-</div>
+          <div class="delta green" id="kpi-may-gap">距 2月基線仍差 -3.0%</div>
+        </div>
+      </div>
+
+      <!-- Section 1: Trend -->
+      <div class="section">
+        <h2><span class="icon">📈</span> 會員銷售佔比月趨勢：一般店 vs 數位店</h2>
+        <div class="chart-wrap"><canvas id="chartTrend"></canvas></div>
+        <div class="insight">
+          <strong>💡 關鍵觀察：</strong> 兩種店型在 3 月同時下跌 ~8.7%，但數位店 4 月即快速回升並於 5 月下旬飆至 94.9%；一般店至 5 月下旬仍只回升至 58.1%，距 Revamp 前基線（61.1%）尚差 3 個百分點。
+        </div>
+      </div>
+
+      <!-- Section 2: Amt breakdown -->
+      <div class="section">
+        <h2><span class="icon">💰</span> 銷售額拆解：會員 vs 非會員</h2>
+        <div class="chart-row">
+          <div>
+            <h3>一般店</h3>
+            <div class="chart-wrap"><canvas id="chartAmtNormal"></canvas></div>
+          </div>
+          <div>
+            <h3>數位店</h3>
+            <div class="chart-wrap"><canvas id="chartAmtDigital"></canvas></div>
+          </div>
+        </div>
+        <div class="insight">
+          <strong>💡 核心證據：</strong> 會員銷售額暴跌 -23.6%，但非會員銷售額反漲
+          +9.4%。顧客仍在消費，只是不再被辨識為會員 — 問題出在<strong>會員辨識流程斷裂</strong>。
+        </div>
+      </div>
+
+      <!-- Section 3: HW breakdown -->
+      <div class="section">
+        <h2><span class="icon">🖥️</span> 硬體版本 vs 掉幅分析</h2>
+        <div class="chart-row">
+          <div>
+            <div class="chart-wrap"><canvas id="chartHW"></canvas></div>
+          </div>
+          <div>
+            <table id="tableHW">
+              <thead><tr><th>HW 版本</th><th>門店數</th><th>2月 Mix</th><th>3月
+                    Mix</th><th>掉幅</th></tr></thead>
+              <tbody></tbody>
+            </table>
+            <div class="insight" style="margin-top:16px">
+              <strong>💡 排除硬體因素：</strong> 所有 HW 版本掉幅均勻（-8% ~
+              -9.5%），確認是<strong>軟體/UX 流程層面</strong>的問題。
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 4: Pre-revamp mix vs drop -->
+      <div class="section">
+        <h2><span class="icon">🎯</span> Revamp 前 Mix 水準 vs 掉幅（一般店）</h2>
+        <div class="chart-row">
+          <div>
+            <div class="chart-wrap"><canvas id="chartMixDrop"></canvas></div>
+          </div>
+          <div>
+            <table id="tableMixQ">
+              <thead><tr><th>分組</th><th>Revamp前</th><th>Revamp後</th><th>掉幅</th></tr></thead>
+              <tbody></tbody>
+            </table>
+            <div class="insight" style="margin-top:16px">
+              <strong>💡 高依賴 = 高風險：</strong> 原本會員佔比越高的門店掉得越重（-12% vs
+              -5.4%），代表越依賴 Kiosk 自動辨識的門店受害越深。
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 5: Drop distribution -->
+      <div class="section">
+        <h2><span class="icon">📊</span> 個店掉幅分佈（162 家一般店）</h2>
+        <div class="chart-row">
+          <div>
+            <div class="chart-wrap"><canvas id="chartDistrib"></canvas></div>
+          </div>
+          <div>
+            <h3>掉幅最嚴重 Top 10</h3>
+            <table id="tableTop10">
+              <thead><tr><th>門店</th><th>HW</th><th>2月</th><th>3月</th><th>掉幅</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 6: TC correlation -->
+      <div class="section">
+        <h2><span class="icon">🔗</span> 交易量 (TC) vs 掉幅相關性</h2>
+        <div class="chart-wrap"><canvas id="chartTC"></canvas></div>
+        <div class="insight">
+          <strong>💡 高交易量門店掉更多：</strong> Q4（高 TC）掉幅達 -9.7%，顯示交易量越大、受影響的會員交易筆數越多。
+        </div>
+      </div>
+
+      <!-- Section 7: May Recovery -->
+      <div class="section" style="border-color: rgba(74,222,128,0.3);">
+        <h2><span class="icon">🔄</span> 5月回升深度分析：一般店復原進度</h2>
+        <div class="chart-row">
+          <div>
+            <h3>회복 進度：Feb 基線 vs 各時間點</h3>
+            <div class="chart-wrap"><canvas id="chartRecovery"></canvas></div>
+          </div>
+          <div>
+            <h3>銷售額：會員 vs 非會員（含5月）</h3>
+            <div class="chart-wrap"><canvas id="chartAmtMay"></canvas></div>
+          </div>
+        </div>
+        <div class="insight" style="border-color: var(--green); background: rgba(74,222,128,0.07); color: var(--green);">
+          <strong>📊 5月進展：</strong>
+          一般店從 4 月低點 52.2% 緩慢回升，5月上旬達 56.7%，5月下旬達 58.1%（Δ+5.9pp vs Apr），但仍距 Revamp 前基線 61.1% 差 <strong>3.0pp</strong>。
+          數位店則已大幅超越基線，5月下旬達 94.9%（可能有新功能或流程介入）。
+        </div>
+
+        <div class="chart-row" style="margin-top:20px">
+          <div>
+            <h3>個店 5月 Mix 距 2月基線差距分佈</h3>
+            <div class="chart-wrap"><canvas id="chartRecovDistrib"></canvas></div>
+          </div>
+          <div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+              <div>
+                <h3>🏆 回升最多（4月→5月）Top 5</h3>
+                <table id="tableRecovTop">
+                  <thead><tr><th>門店</th><th>HW</th><th>4月</th><th>5月</th><th>Δ</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+              <div>
+                <h3>⚠️ 仍距基線最遠 Top 5</h3>
+                <table id="tableRecovLag">
+                  <thead><tr><th>門店</th><th>HW</th><th>2月</th><th>5月</th><th>差距</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="insight" style="margin-top:12px; border-color: var(--orange); background: rgba(251,146,60,0.07); color: var(--orange);">
+              <strong>⚠️ 注意：</strong>有 TWI241（-22.0pp）、TWI246（-21.1pp）等 5+ 家門店距 2月基線差距仍超過 20pp，需優先排查。
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 8: Target Store Deep Dive -->
+      <div class="section" style="border-color: rgba(251,146,60,0.3);">
+        <h2><span class="icon">🔍</span> 重點門店深度分析（17家）</h2>
+        <p style="color: var(--muted); margin-bottom: 16px; font-size: 13px;">
+          針對 TWI089, TWI108, TWI148, TWI163, TWI186, TWI194, TWI201, TWI238, TWI241, TWI243, TWI244, TWI245, TWI246, TWI247, TWI248, TWI249, TWB594 等 17 家門店進行深度分析
+        </p>
+
+        <!-- 8a: Group trend comparison -->
+        <div class="chart-row">
+          <div>
+            <h3>目標門店群組 vs 全體一般店 Mix 趨勢</h3>
+            <div class="chart-wrap"><canvas id="chartTargetTrend"></canvas></div>
+          </div>
+          <div>
+            <h3>目標門店群組 vs 全體一般店 差距變化</h3>
+            <div class="chart-wrap"><canvas id="chartTargetGap"></canvas></div>
+          </div>
+        </div>
+        <div class="insight" style="border-color: var(--orange); background: rgba(251,146,60,0.07); color: var(--orange);">
+          <strong>💡 關鍵發現：</strong>這 17 家門店在 Revamp 前屬於高 mix 群組（平均 73.6% vs 全體 61.1%），
+          但 Revamp 後差距從 12.5pp 急劇收窄至僅 1.3pp（5月下旬）。
+          Revamp 摧毀了這些門店原有的會員辨識優勢，使其「均質化」到全體平均水準。
+        </div>
+
+        <!-- 8b: Individual store spaghetti chart -->
+        <div style="margin-top: 24px;">
+          <h3>各門店 Mix 逐月走勢（個店線條圖）</h3>
+          <div class="chart-wrap" style="height: 400px;"><canvas id="chartTargetSpaghetti"></canvas></div>
+        </div>
+
+        <!-- 8c: HW breakdown within target group -->
+        <div class="chart-row" style="margin-top: 24px;">
+          <div>
+            <h3>目標門店硬體分佈 vs 平均掉幅</h3>
+            <div class="chart-wrap"><canvas id="chartTargetHW"></canvas></div>
+          </div>
+          <div>
+            <h3>個店詳細數據</h3>
+            <div style="max-height: 400px; overflow-y: auto;">
+              <table id="tableTargetStores">
+                <thead><tr><th>門店</th><th>HW</th><th>TC</th><th>2月</th><th>3月</th><th>4月</th><th>5月下旬</th><th>Feb→Mar</th><th>回復</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 8d: Recovery status categorization -->
+        <div style="margin-top: 24px;">
+          <h3>門店恢復狀態分類</h3>
+          <div class="chart-wrap"><canvas id="chartTargetRecovStatus"></canvas></div>
+        </div>
+        <div class="insight" style="margin-top: 12px;">
+          <strong>💡 根因推斷：</strong>
+          <ul style="margin-top: 8px; padding-left: 20px; list-style: disc;">
+            <li><strong>V4 硬體掉幅最深（-15.9pp）</strong>：7 家 V4 門店平均掉幅遠超其他版本，可能 V4 的 Kiosk 介面在 Revamp 後的會員辨識 UX 適配性最差</li>
+            <li><strong>高基線門店受創最重</strong>：TWI248（89.2%→49.5%，-25.1pp）和 TWI238（78.6%→56.7%，-21.9pp）原為超高 mix 門店</li>
+            <li><strong>持續惡化的門店</strong>：TWI186（-9.2pp 3月→5月）、TWI163（-10.4pp）和 TWI246（-8.0pp）在 Revamp 後仍持續下滑，非單次衝擊而是結構性問題</li>
+            <li><strong>部分門店有回升跡象</strong>：TWI248（+12.7pp）、TWI249（+7.2pp）從極低點反彈，但仍遠低於 Revamp 前水準</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Conclusion -->
+      <div class="conclusion">
+        <h2><span class="icon">🔴</span> 主因推斷</h2>
+        <p style="font-size:15px; margin: 12px 0; color: var(--text);">
+          <strong>Revamp 改變了 Kiosk 上的會員辨識/登入流程</strong>（如掃碼方式、手機號輸入、APP 綁定等），
+          導致原本能自動或方便辨識會員的交易，變成以非會員方式完成。
+        </p>
+        <table style="margin-top:16px;">
+          <thead><tr><th>支撐證據</th><th>說明</th></tr></thead>
+          <tbody>
+            <tr><td>非會員銷售額反增 +9.4%</td><td>顧客仍在消費，只是沒被辨識為會員</td></tr>
+            <tr><td>全 HW 版本均勻下跌</td><td>非硬體問題，是軟體/UX 流程層面</td></tr>
+            <tr><td>高 mix 門店掉最多</td><td>越依賴 Kiosk 自動辨識的越受傷</td></tr>
+            <tr><td>數位店快速恢復、一般店不行</td><td>有人工輔助引導的店能克服 UI 變化</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Next steps -->
+      <div class="section">
+        <h2><span class="icon">🔧</span> 下一步定位問題方向與方法</h2>
+        <div class="steps">
+          <div class="step">
+            <div class="num">1</div>
+            <h4>UX 漏斗分析</h4>
+            <p>比較 revamp 前後 Kiosk 「會員辨識步驟」的完成率（掃碼成功率、手機號輸入完成率、APP
+              推送確認率），找出流失最大的步驟。</p>
+          </div>
+          <div class="step">
+            <div class="num">2</div>
+            <h4>會員辨識方式拆分</h4>
+            <p>將 member mix 按辨識方式（條碼 / 手機號 / APP / 自動辨識）拆分，確認哪種方式斷崖式下跌。</p>
+          </div>
+          <div class="step">
+            <div class="num">3</div>
+            <h4>實地觀察重災店</h4>
+            <p>選 TWI248、TWI236、TWI238 等掉幅最大的門店，實地觀察顧客在 Kiosk
+              的操作行為，記錄放棄會員辨識的時間點。</p>
+          </div>
+          <div class="step">
+            <div class="num">4</div>
+            <h4>數位店恢復因素調查</h4>
+            <p>釐清數位店快速恢復的原因：是否有 POS 端會員綁定、店員 SOP 變更、或不同 Kiosk 版本？</p>
+          </div>
+          <div class="step">
+            <div class="num">5</div>
+            <h4>A/B 測試舊流程</h4>
+            <p>在 5~10 家一般店回滾到 revamp 前的會員辨識流程，觀察 mix 是否回升，作為因果確認。</p>
+          </div>
+          <div class="step">
+            <div class="num">6</div>
+            <h4>客群交叉分析</h4>
+            <p>將跌幅最大的門店與客群特徵（年齡層、新/舊會員比例）交叉分析，看是否特定客群不適應新流程。</p>
+          </div>
+          <div class="step">
+            <div class="num">7</div>
+            <h4>5 月回升因素追蹤</h4>
+            <p>一般店 5 月已緩慢回升至 ~58%，調查是否有 hotfix、UI 微調、或店員培訓介入。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+(() => {
+  // --- Data computation ---
+  const allMonths = Object.keys(DATE_METRICS);
+  // Curated timeline: monthly + two representative May windows
+  const allMonthsOrdered = ['202512','202601','202602','202603','202604','20260501~0518','20260514~0519','20260514~0520','20260521~0527','20260514~0527'];
+  const allLabelsOrdered = ['2025/12','2026/01','2026/02','2026/03','2026/04','5/1~18','5/14~19','5/14~20','5/21~27','5/14~27'];
+  const trendMonths = allMonthsOrdered;
+  const trendLabels = allLabelsOrdered;
+  const coreMonths = allMonthsOrdered;
+  const coreLabels = allLabelsOrdered;
+  const normalIdx = STORE_TYPE.map((s,i) => s==='一般店' ? i : -1).filter(i=>i>=0);
+  const digiIdx = STORE_TYPE.map((s,i) => s==='數位店' ? i : -1).filter(i=>i>=0);
+
+  function avgMix(indices, month) {
+    const vals = indices.map(i => DATE_METRICS[month]?.mix[i]).filter(v => v != null && v > 0);
+    return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
+  }
+  function sumAmt(indices, month) {
+    return indices.map(i => DATE_METRICS[month]?.amt[i] || 0).reduce((a,b)=>a+b,0);
+  }
+  function memberAmt(indices, month) {
+    return indices.reduce((acc,i) => {
+      const a = DATE_METRICS[month]?.amt[i] || 0;
+      const m = DATE_METRICS[month]?.mix[i] || 0;
+      return acc + a * m / 100;
+    }, 0);
+  }
+
+  const chartFont = { family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" };
+  const gridColor = 'rgba(51,65,85,0.5)';
+  const defaultOpts = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: '#94a3b8', font: { size: 11, ...chartFont } } } },
+    scales: {
+      x: { ticks: { color: '#94a3b8', font: { size: 10, ...chartFont } }, grid: { color: gridColor } },
+      y: { ticks: { color: '#94a3b8', font: { size: 10, ...chartFont } }, grid: { color: gridColor } }
+    }
+  };
+
+  // --- KPI ---
+  document.getElementById('kpi-drop').textContent = '-8.6%';
+  document.getElementById('kpi-member-amt').textContent = '-23.6%';
+  document.getElementById('kpi-nonmember-amt').textContent = '+9.4%';
+  document.getElementById('kpi-affected').textContent = '80%';
+  const mayLatestMix = +avgMix(normalIdx, '20260521~0527').toFixed(1);
+  const febBaseline = +avgMix(normalIdx, '202602').toFixed(1);
+  document.getElementById('kpi-may-mix').textContent = mayLatestMix + '%';
+  document.getElementById('kpi-may-gap').textContent = `距 2月基線仍差 ${(mayLatestMix - febBaseline).toFixed(1)}pp`;
+
+  // --- Chart 1: Trend ---
+  new Chart(document.getElementById('chartTrend'), {
+    type: 'line',
+    data: {
+      labels: trendLabels,
+      datasets: [
+        {
+          label: '一般店 (162家)',
+          data: trendMonths.map(m => +avgMix(normalIdx, m).toFixed(1)),
+          borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,0.1)',
+          borderWidth: 2.5, pointRadius: 4, tension: 0.3, fill: true,
+        },
+        {
+          label: '數位店 (35家)',
+          data: trendMonths.map(m => +avgMix(digiIdx, m).toFixed(1)),
+          borderColor: '#c084fc', backgroundColor: 'rgba(192,132,252,0.1)',
+          borderWidth: 2.5, pointRadius: 4, tension: 0.3, fill: true,
+        }
+      ]
+    },
+    options: {
+      ...defaultOpts,
+      scales: {
+        ...defaultOpts.scales,
+        y: { ...defaultOpts.scales.y, min: 40, max: 100, ticks: { ...defaultOpts.scales.y.ticks, callback: v => v + '%' } }
+      }
+    }
+  });
+
+  // --- Chart 2a: Amt Normal ---
+  const normalMemberAmts = coreMonths.map(m => +(memberAmt(normalIdx, m)/1e6).toFixed(1));
+  const normalNonMemberAmts = coreMonths.map(m => +((sumAmt(normalIdx, m) - memberAmt(normalIdx, m))/1e6).toFixed(1));
+  new Chart(document.getElementById('chartAmtNormal'), {
+    type: 'bar',
+    data: {
+      labels: coreLabels,
+      datasets: [
+        { label: '會員銷售額 (M)', data: normalMemberAmts, backgroundColor: '#38bdf8', borderRadius: 4 },
+        { label: '非會員銷售額 (M)', data: normalNonMemberAmts, backgroundColor: '#475569', borderRadius: 4 }
+      ]
+    },
+    options: { ...defaultOpts, scales: { ...defaultOpts.scales, x: { ...defaultOpts.scales.x, stacked: true }, y: { ...defaultOpts.scales.y, stacked: true, ticks: { ...defaultOpts.scales.y.ticks, callback: v => v + 'M' } } } }
+  });
+
+  // --- Chart 2b: Amt Digital ---
+  const digiMemberAmts = coreMonths.map(m => +(memberAmt(digiIdx, m)/1e6).toFixed(1));
+  const digiNonMemberAmts = coreMonths.map(m => +((sumAmt(digiIdx, m) - memberAmt(digiIdx, m))/1e6).toFixed(1));
+  new Chart(document.getElementById('chartAmtDigital'), {
+    type: 'bar',
+    data: {
+      labels: coreLabels,
+      datasets: [
+        { label: '會員銷售額 (M)', data: digiMemberAmts, backgroundColor: '#c084fc', borderRadius: 4 },
+        { label: '非會員銷售額 (M)', data: digiNonMemberAmts, backgroundColor: '#475569', borderRadius: 4 }
+      ]
+    },
+    options: { ...defaultOpts, scales: { ...defaultOpts.scales, x: { ...defaultOpts.scales.x, stacked: true }, y: { ...defaultOpts.scales.y, stacked: true, ticks: { ...defaultOpts.scales.y.ticks, callback: v => v + 'M' } } } }
+  });
+
+  // --- Chart 3: HW ---
+  const hwGroups = {};
+  for (const i of normalIdx) {
+    const hw = STORE_HW[i];
+    if (!hwGroups[hw]) hwGroups[hw] = [];
+    hwGroups[hw].push(i);
+  }
+  const hwData = Object.entries(hwGroups)
+    .filter(([,v]) => v.length >= 3)
+    .map(([hw, indices]) => {
+      const feb = indices.map(i=>DATE_METRICS['202602'].mix[i]).filter(v=>v>0);
+      const mar = indices.map(i=>DATE_METRICS['202603'].mix[i]).filter(v=>v>0);
+      const fA = feb.reduce((a,b)=>a+b,0)/feb.length;
+      const mA = mar.reduce((a,b)=>a+b,0)/mar.length;
+      return { hw, count: indices.length, feb: +fA.toFixed(1), mar: +mA.toFixed(1), delta: +(mA-fA).toFixed(1) };
+    })
+    .sort((a,b) => b.count - a.count);
+
+  new Chart(document.getElementById('chartHW'), {
+    type: 'bar',
+    data: {
+      labels: hwData.map(d => d.hw + ` (${d.count})`),
+      datasets: [
+        { label: '2026/02', data: hwData.map(d=>d.feb), backgroundColor: '#38bdf8', borderRadius: 4 },
+        { label: '2026/03', data: hwData.map(d=>d.mar), backgroundColor: '#f87171', borderRadius: 4 },
+      ]
+    },
+    options: { ...defaultOpts, indexAxis: 'y', scales: { x: { ...defaultOpts.scales.x, min: 40, max: 70, ticks: { ...defaultOpts.scales.x.ticks, callback: v=>v+'%' } }, y: defaultOpts.scales.y } }
+  });
+
+  const hwTbody = document.querySelector('#tableHW tbody');
+  for (const d of hwData) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="mono">${d.hw}</td><td>${d.count}</td><td>${d.feb}%</td><td>${d.mar}%</td><td class="text-red mono">${d.delta}%</td>`;
+    hwTbody.appendChild(tr);
+  }
+
+  // --- Chart 4: Mix quartile vs drop ---
+  const storeData = normalIdx.map(i => ({
+    store: STORE_META[i][0], hw: STORE_HW[i], tc: STORE_TC[i],
+    feb: DATE_METRICS['202602'].mix[i], mar: DATE_METRICS['202603'].mix[i],
+    delta: DATE_METRICS['202603'].mix[i] - DATE_METRICS['202602'].mix[i],
+    febAmt: DATE_METRICS['202602'].amt[i], marAmt: DATE_METRICS['202603'].amt[i],
+  })).filter(d => d.feb > 0 && d.mar > 0);
+
+  storeData.sort((a,b) => a.feb - b.feb);
+  const q = Math.floor(storeData.length / 4);
+  const mixQLabels = ['Low mix\n(<55%)', 'Med-low\n(55-60%)', 'Med-high\n(60-66%)', 'High mix\n(>66%)'];
+  const mixQuartiles = [storeData.slice(0,q), storeData.slice(q,q*2), storeData.slice(q*2,q*3), storeData.slice(q*3)];
+  const mixQData = mixQuartiles.map(arr => {
+    const avgF = arr.reduce((a,d)=>a+d.feb,0)/arr.length;
+    const avgM = arr.reduce((a,d)=>a+d.mar,0)/arr.length;
+    const avgD = arr.reduce((a,d)=>a+d.delta,0)/arr.length;
+    return { feb: +avgF.toFixed(1), mar: +avgM.toFixed(1), delta: +avgD.toFixed(1) };
+  });
+
+  new Chart(document.getElementById('chartMixDrop'), {
+    type: 'bar',
+    data: {
+      labels: mixQLabels,
+      datasets: [
+        { label: 'Revamp 前 (2月)', data: mixQData.map(d=>d.feb), backgroundColor: '#38bdf8', borderRadius: 4 },
+        { label: 'Revamp 後 (3月)', data: mixQData.map(d=>d.mar), backgroundColor: '#f87171', borderRadius: 4 },
+      ]
+    },
+    options: { ...defaultOpts, scales: { ...defaultOpts.scales, y: { ...defaultOpts.scales.y, min: 40, max: 75, ticks: { ...defaultOpts.scales.y.ticks, callback: v=>v+'%' } } } }
+  });
+
+  const mqTbody = document.querySelector('#tableMixQ tbody');
+  const mqNames = ['Low mix (<55%)', 'Med-low (55-60%)', 'Med-high (60-66%)', 'High mix (>66%)'];
+  for (let i = 0; i < 4; i++) {
+    const d = mixQData[i];
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${mqNames[i]}</td><td>${d.feb}%</td><td>${d.mar}%</td><td class="text-red mono">${d.delta}%</td>`;
+    mqTbody.appendChild(tr);
+  }
+
+  // --- Chart 5: Distribution ---
+  const bucketLabels = ['< -20%', '-20~-15%', '-15~-10%', '-10~-5%', '-5~0%', '0~5%', '> 5%'];
+  const buckets = [0,0,0,0,0,0,0];
+  for (const d of storeData) {
+    if (d.delta < -20) buckets[0]++;
+    else if (d.delta < -15) buckets[1]++;
+    else if (d.delta < -10) buckets[2]++;
+    else if (d.delta < -5) buckets[3]++;
+    else if (d.delta < 0) buckets[4]++;
+    else if (d.delta < 5) buckets[5]++;
+    else buckets[6]++;
+  }
+  const bucketColors = ['#dc2626','#ef4444','#f87171','#fb923c','#fbbf24','#4ade80','#22c55e'];
+
+  new Chart(document.getElementById('chartDistrib'), {
+    type: 'bar',
+    data: {
+      labels: bucketLabels,
+      datasets: [{ label: '門店數', data: buckets, backgroundColor: bucketColors, borderRadius: 4 }]
+    },
+    options: { ...defaultOpts, plugins: { ...defaultOpts.plugins, legend: { display: false } } }
+  });
+
+  // Top 10 table
+  const top10 = [...storeData].sort((a,b)=>a.delta-b.delta).slice(0,10);
+  const t10Tbody = document.querySelector('#tableTop10 tbody');
+  for (const d of top10) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="mono">${d.store}</td><td>${d.hw}</td><td>${d.feb}%</td><td>${d.mar}%</td><td class="text-red mono">${d.delta.toFixed(1)}%</td>`;
+    t10Tbody.appendChild(tr);
+  }
+
+  // --- Chart 6: TC correlation ---
+  storeData.sort((a,b)=>a.tc-b.tc);
+  const tcQ = Math.floor(storeData.length/4);
+  const tcQuartiles = [storeData.slice(0,tcQ), storeData.slice(tcQ,tcQ*2), storeData.slice(tcQ*2,tcQ*3), storeData.slice(tcQ*3)];
+  const tcQLabels = ['Q1 低TC', 'Q2', 'Q3', 'Q4 高TC'];
+  const tcQData = tcQuartiles.map(arr => {
+    const avgTC = arr.reduce((a,d)=>a+d.tc,0)/arr.length;
+    const avgD = arr.reduce((a,d)=>a+d.delta,0)/arr.length;
+    const avgF = arr.reduce((a,d)=>a+d.feb,0)/arr.length;
+    const avgM = arr.reduce((a,d)=>a+d.mar,0)/arr.length;
+    return { tc: Math.round(avgTC), delta: +avgD.toFixed(1), feb: +avgF.toFixed(1), mar: +avgM.toFixed(1) };
+  });
+
+  new Chart(document.getElementById('chartTC'), {
+    type: 'bar',
+    data: {
+      labels: tcQLabels.map((l,i) => `${l}\n(avg TC: ${tcQData[i].tc})`),
+      datasets: [
+        { label: '2月 Mix', data: tcQData.map(d=>d.feb), backgroundColor: 'rgba(56,189,248,0.7)', borderRadius: 4 },
+        { label: '3月 Mix', data: tcQData.map(d=>d.mar), backgroundColor: 'rgba(248,113,113,0.7)', borderRadius: 4 },
+      ]
+    },
+    options: { ...defaultOpts, scales: { ...defaultOpts.scales, y: { ...defaultOpts.scales.y, min: 40, max: 70, ticks: { ...defaultOpts.scales.y.ticks, callback: v=>v+'%' } } } }
+  });
+
+  // --- Chart 7: Recovery Progress ---
+  const recovMonths = allMonthsOrdered;
+  const recovLabels = allLabelsOrdered;
+  new Chart(document.getElementById('chartRecovery'), {
+    type: 'line',
+    data: {
+      labels: recovLabels,
+      datasets: [
+        {
+          label: '一般店',
+          data: recovMonths.map(m => +avgMix(normalIdx, m).toFixed(1)),
+          borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,0.15)',
+          borderWidth: 3, pointRadius: 6, pointBackgroundColor: '#38bdf8', tension: 0.2, fill: true,
+        },
+        {
+          label: '數位店',
+          data: recovMonths.map(m => +avgMix(digiIdx, m).toFixed(1)),
+          borderColor: '#c084fc', backgroundColor: 'rgba(192,132,252,0.1)',
+          borderWidth: 2, pointRadius: 5, pointBackgroundColor: '#c084fc', tension: 0.2,
+        },
+        {
+          label: '一般店 Revamp前基線',
+          data: recovMonths.map(() => +avgMix(normalIdx, '202602').toFixed(1)),
+          borderColor: 'rgba(248,113,113,0.5)', borderDash: [6,4],
+          borderWidth: 1.5, pointRadius: 0, fill: false,
+        }
+      ]
+    },
+    options: {
+      ...defaultOpts,
+      scales: {
+        ...defaultOpts.scales,
+        y: { ...defaultOpts.scales.y, min: 40, max: 100, ticks: { ...defaultOpts.scales.y.ticks, callback: v => v + '%' } }
+      }
+    }
+  });
+
+  // --- Chart 7b: Amt May extended ---
+  const amtMonths5 = allMonthsOrdered;
+  const amtLabels5 = allLabelsOrdered;
+  new Chart(document.getElementById('chartAmtMay'), {
+    type: 'bar',
+    data: {
+      labels: amtLabels5,
+      datasets: [
+        { label: '會員銷售額 (M)', data: amtMonths5.map(m => +(memberAmt(normalIdx,m)/1e6).toFixed(1)), backgroundColor: '#38bdf8', borderRadius: 4 },
+        { label: '非會員銷售額 (M)', data: amtMonths5.map(m => +((sumAmt(normalIdx,m)-memberAmt(normalIdx,m))/1e6).toFixed(1)), backgroundColor: '#475569', borderRadius: 4 }
+      ]
+    },
+    options: { ...defaultOpts, scales: { ...defaultOpts.scales, x: { ...defaultOpts.scales.x, stacked: true }, y: { ...defaultOpts.scales.y, stacked: true, ticks: { ...defaultOpts.scales.y.ticks, callback: v => v + 'M' } } } }
+  });
+
+  // --- Chart 7c: Recovery distribution (gap vs Feb baseline) ---
+  const recov = normalIdx.map(i => ({
+    store: STORE_META[i][0], hw: STORE_HW[i],
+    feb: DATE_METRICS['202602'].mix[i] || 0,
+    apr: DATE_METRICS['202604'].mix[i] || 0,
+    may: DATE_METRICS['20260514~0527'].mix[i] || 0,
+  })).filter(d => d.feb > 0 && d.may > 0);
+
+  const gapVals = recov.map(d => +(d.may - d.feb).toFixed(1));
+  const gapBuckets = {'恢復超越(>0)':0, '差距<5pp':0, '差距5-10pp':0, '差距10-15pp':0, '差距15-20pp':0, '差距>20pp':0};
+  for (const g of gapVals) {
+    if (g > 0) gapBuckets['恢復超越(>0)']++;
+    else if (g > -5) gapBuckets['差距<5pp']++;
+    else if (g > -10) gapBuckets['差距5-10pp']++;
+    else if (g > -15) gapBuckets['差距10-15pp']++;
+    else if (g > -20) gapBuckets['差距15-20pp']++;
+    else gapBuckets['差距>20pp']++;
+  }
+  const gapColors = ['#4ade80','#a3e635','#fbbf24','#fb923c','#f87171','#dc2626'];
+  new Chart(document.getElementById('chartRecovDistrib'), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(gapBuckets),
+      datasets: [{ label: '門店數', data: Object.values(gapBuckets), backgroundColor: gapColors, borderRadius: 4 }]
+    },
+    options: { ...defaultOpts, plugins: { ...defaultOpts.plugins, legend: { display: false } } }
+  });
+
+  // Recovery top table (Apr→May biggest gain)
+  const recovSorted = [...recov].sort((a,b) => (b.may - b.apr) - (a.may - a.apr));
+  const rTopTbody = document.querySelector('#tableRecovTop tbody');
+  for (const d of recovSorted.slice(0,5)) {
+    const tr = document.createElement('tr');
+    const delta = (d.may - d.apr).toFixed(1);
+    tr.innerHTML = `<td class="mono">${d.store}</td><td>${d.hw}</td><td>${d.apr.toFixed(1)}%</td><td>${d.may.toFixed(1)}%</td><td class="text-green mono">+${delta}%</td>`;
+    rTopTbody.appendChild(tr);
+  }
+
+  // Still lagging table (gap to Feb baseline)
+  const lagSorted = [...recov].sort((a,b) => (a.may - a.feb) - (b.may - b.feb));
+  const rLagTbody = document.querySelector('#tableRecovLag tbody');
+  for (const d of lagSorted.slice(0,5)) {
+    const gap = (d.may - d.feb).toFixed(1);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="mono">${d.store}</td><td>${d.hw}</td><td>${d.feb.toFixed(1)}%</td><td>${d.may.toFixed(1)}%</td><td class="text-red mono">${gap}%</td>`;
+    rLagTbody.appendChild(tr);
+  }
+
+  // --- Section 8: Target Store Deep Dive ---
+  const targetIDs = ['TWI089','TWI108','TWI148','TWI163','TWI186','TWI194','TWI201','TWI238','TWI241','TWI243','TWI244','TWI245','TWI246','TWI247','TWI248','TWI249','TWB594'];
+  const targetIdx = [];
+  for (let i = 0; i < STORE_META.length; i++) {
+    if (targetIDs.includes(STORE_META[i][0])) targetIdx.push(i);
+  }
+
+  // 8a: Target trend vs all normal
+  const targetAvgs = allMonthsOrdered.map(m => +avgMix(targetIdx, m).toFixed(1));
+  const allNormalAvgs = allMonthsOrdered.map(m => +avgMix(normalIdx, m).toFixed(1));
+  const targetFebBaseline = +avgMix(targetIdx, '202602').toFixed(1);
+
+  new Chart(document.getElementById('chartTargetTrend'), {
+    type: 'line',
+    data: {
+      labels: allLabelsOrdered,
+      datasets: [
+        {
+          label: '目標17店',
+          data: targetAvgs,
+          borderColor: '#fb923c', backgroundColor: 'rgba(251,146,60,0.1)',
+          borderWidth: 2.5, pointRadius: 4, tension: 0.3, fill: true,
+        },
+        {
+          label: '全體一般店',
+          data: allNormalAvgs,
+          borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,0.1)',
+          borderWidth: 2.5, pointRadius: 4, tension: 0.3, fill: true,
+        },
+        {
+          label: '目標群組 Feb 基線 (' + targetFebBaseline + '%)',
+          data: allMonthsOrdered.map(() => targetFebBaseline),
+          borderColor: 'rgba(251,146,60,0.5)', borderDash: [6,4],
+          borderWidth: 1.5, pointRadius: 0, fill: false,
+        }
+      ]
+    },
+    options: {
+      ...defaultOpts,
+      scales: {
+        ...defaultOpts.scales,
+        y: { ...defaultOpts.scales.y, min: 40, max: 85, ticks: { ...defaultOpts.scales.y.ticks, callback: v => v + '%' } }
+      }
+    }
+  });
+
+  // 8a: Target gap chart
+  const gapData = allMonthsOrdered.map((m, i) => +(targetAvgs[i] - allNormalAvgs[i]).toFixed(1));
+  new Chart(document.getElementById('chartTargetGap'), {
+    type: 'bar',
+    data: {
+      labels: allLabelsOrdered,
+      datasets: [{
+        label: '差距 (目標 - 全體) pp',
+        data: gapData,
+        backgroundColor: gapData.map(v => v >= 5 ? '#fb923c' : v >= 0 ? '#fbbf24' : '#f87171'),
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      ...defaultOpts,
+      scales: {
+        ...defaultOpts.scales,
+        y: { ...defaultOpts.scales.y, ticks: { ...defaultOpts.scales.y.ticks, callback: v => v + 'pp' } }
+      }
+    }
+  });
+
+  // 8b: Spaghetti chart
+  const spaghettiPalette = ['#38bdf8','#f87171','#4ade80','#fb923c','#c084fc','#fbbf24','#22d3ee','#f472b6','#a78bfa','#34d399','#e879f9','#60a5fa','#facc15','#f97316','#a3e635','#2dd4bf','#818cf8'];
+  const spaghettiDatasets = targetIdx.map((idx, ci) => ({
+    label: STORE_META[idx][0],
+    data: allMonthsOrdered.map(m => {
+      const v = DATE_METRICS[m]?.mix[idx];
+      return (v != null && v > 0) ? +v.toFixed(1) : null;
+    }),
+    borderColor: spaghettiPalette[ci % spaghettiPalette.length],
+    borderWidth: 1.5, pointRadius: 2, tension: 0.2, fill: false,
+  }));
+
+  new Chart(document.getElementById('chartTargetSpaghetti'), {
+    type: 'line',
+    data: { labels: allLabelsOrdered, datasets: spaghettiDatasets },
+    options: {
+      ...defaultOpts,
+      scales: {
+        ...defaultOpts.scales,
+        y: { ...defaultOpts.scales.y, min: 20, max: 100, ticks: { ...defaultOpts.scales.y.ticks, callback: v => v + '%' } }
+      },
+      plugins: {
+        ...defaultOpts.plugins,
+        legend: { labels: { color: '#94a3b8', font: { size: 10, ...chartFont } }, position: 'right' }
+      }
+    }
+  });
+
+  // 8c: HW breakdown within target group
+  const targetHWGroups = {};
+  for (const i of targetIdx) {
+    const hw = STORE_HW[i];
+    if (!targetHWGroups[hw]) targetHWGroups[hw] = [];
+    targetHWGroups[hw].push(i);
+  }
+  const targetHWData = Object.entries(targetHWGroups)
+    .map(([hw, indices]) => {
+      const febVals = indices.map(i => DATE_METRICS['202602'].mix[i]).filter(v => v > 0);
+      const marVals = indices.map(i => DATE_METRICS['202603'].mix[i]).filter(v => v > 0);
+      const febAvg = febVals.length ? febVals.reduce((a,b)=>a+b,0)/febVals.length : 0;
+      const marAvg = marVals.length ? marVals.reduce((a,b)=>a+b,0)/marVals.length : 0;
+      return { hw, count: indices.length, feb: +febAvg.toFixed(1), mar: +marAvg.toFixed(1), delta: +(marAvg - febAvg).toFixed(1) };
+    })
+    .sort((a,b) => b.count - a.count);
+
+  new Chart(document.getElementById('chartTargetHW'), {
+    type: 'bar',
+    data: {
+      labels: targetHWData.map(d => d.hw + ` (${d.count})`),
+      datasets: [
+        { label: '2月 Avg', data: targetHWData.map(d => d.feb), backgroundColor: '#38bdf8', borderRadius: 4 },
+        { label: '3月 Avg', data: targetHWData.map(d => d.mar), backgroundColor: '#f87171', borderRadius: 4 },
+      ]
+    },
+    options: { ...defaultOpts, indexAxis: 'y', scales: { x: { ...defaultOpts.scales.x, min: 30, max: 90, ticks: { ...defaultOpts.scales.x.ticks, callback: v => v + '%' } }, y: defaultOpts.scales.y } }
+  });
+
+  // 8c: Target stores table
+  const targetStoreRows = targetIdx.map(i => {
+    const store = STORE_META[i][0];
+    const hw = STORE_HW[i];
+    const tc = STORE_TC[i];
+    const feb = DATE_METRICS['202602']?.mix[i] || 0;
+    const mar = DATE_METRICS['202603']?.mix[i] || 0;
+    const apr = DATE_METRICS['202604']?.mix[i] || 0;
+    const mayLate = DATE_METRICS['20260521~0527']?.mix[i] || 0;
+    const drop = mar - feb;
+    const recov = mayLate - mar;
+    return { store, hw, tc, feb, mar, apr, mayLate, drop, recov };
+  }).sort((a,b) => a.drop - b.drop);
+
+  const tsTbody = document.querySelector('#tableTargetStores tbody');
+  for (const d of targetStoreRows) {
+    const tr = document.createElement('tr');
+    const dropClass = d.drop < 0 ? 'text-red' : 'text-green';
+    const recovClass = d.recov > 0 ? 'text-green' : 'text-red';
+    tr.innerHTML = `<td class="mono">${d.store}</td><td>${d.hw}</td><td>${d.tc}</td><td>${d.feb.toFixed(1)}%</td><td>${d.mar.toFixed(1)}%</td><td>${d.apr.toFixed(1)}%</td><td>${d.mayLate.toFixed(1)}%</td><td class="${dropClass} mono">${d.drop.toFixed(1)}pp</td><td class="${recovClass} mono">${d.recov > 0 ? '+' : ''}${d.recov.toFixed(1)}pp</td>`;
+    tsTbody.appendChild(tr);
+  }
+
+  // 8d: Recovery status categorization
+  const recovCategories = { '持續惡化': 0, '微幅回升 (<5pp)': 0, '顯著回升 (≥5pp)': 0 };
+  for (const d of targetStoreRows) {
+    if (d.recov < 0) recovCategories['持續惡化']++;
+    else if (d.recov < 5) recovCategories['微幅回升 (<5pp)']++;
+    else recovCategories['顯著回升 (≥5pp)']++;
+  }
+
+  new Chart(document.getElementById('chartTargetRecovStatus'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(recovCategories),
+      datasets: [{
+        data: Object.values(recovCategories),
+        backgroundColor: ['#f87171', '#fbbf24', '#4ade80'],
+        borderColor: '#1e293b', borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#94a3b8', font: { size: 12, ...chartFont } }, position: 'bottom' },
+        tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.parsed} 家` } }
+      }
+    }
+  });
+
+})();
+</script>
+  </body>
+</html>
