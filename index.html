@@ -45,6 +45,200 @@
   .stat .val { font-size: 20px; font-weight: 700; color: #38bdf8; }
   .stat .lbl { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
   #map { position: fixed; top: 64px; left: 0; right: 0; bottom: 0; }
+  #storeListPanel {
+    position: fixed; top: 64px; right: 0; bottom: 0; z-index: 1000;
+    width: 400px;
+    background: rgba(15, 23, 42, 0.95);
+    border-left: 1px solid #334155;
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+  }
+  #storeListPanel.visible {
+    transform: translateX(0);
+  }
+  #storeListHeader {
+    padding: 16px;
+    border-bottom: 1px solid #334155;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .store-list-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #lockStoreList {
+    border: 1px solid #475569;
+    background: rgba(30, 41, 59, 0.9);
+    color: #e2e8f0;
+    border-radius: 999px;
+    font-size: 11px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  #lockStoreList:hover {
+    background: rgba(51, 65, 85, 0.95);
+  }
+  #lockStoreList.active {
+    border-color: #38bdf8;
+    background: rgba(3, 105, 161, 0.35);
+    color: #bae6fd;
+  }
+  #storeListHeader h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #f1f5f9;
+  }
+  #storeListHeader .count {
+    font-size: 12px;
+    color: #94a3b8;
+  }
+  #closeStoreList {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 20px;
+    padding: 0;
+    line-height: 1;
+  }
+  #closeStoreList:hover { color: #f1f5f9; }
+  #storeListContent {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+  }
+  .store-item {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .store-item:hover {
+    background: rgba(30, 41, 59, 0.9);
+    border-color: #475569;
+    transform: translateX(-2px);
+  }
+  .store-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .store-item-id {
+    font-size: 13px;
+    font-weight: 600;
+    color: #38bdf8;
+  }
+  .store-item-type {
+    font-size: 10px;
+    color: #94a3b8;
+    background: rgba(51, 65, 85, 0.6);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .store-item-dates {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+    font-size: 10px;
+  }
+  .date-mix {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 4px;
+    background: rgba(15, 23, 42, 0.6);
+    border-radius: 4px;
+  }
+  .date-mix-label {
+    color: #94a3b8;
+  }
+  .date-mix-value {
+    font-weight: 600;
+    color: #e2e8f0;
+  }
+  #toggleStoreList {
+    position: fixed;
+    top: 80px;
+    right: 10px;
+    z-index: 1001;
+    background: rgba(15, 23, 42, 0.92);
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #e2e8f0;
+    cursor: pointer;
+    font-size: 12px;
+    backdrop-filter: blur(10px);
+    transition: opacity 0.2s;
+  }
+  #toggleStoreList:hover {
+    background: rgba(30, 41, 59, 0.92);
+  }
+  #toggleStoreList.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+  #lockedSection {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid #334155;
+    display: none;
+  }
+  #lockedSection.visible {
+    display: block;
+  }
+  #lockedSection h3 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #38bdf8;
+    margin-bottom: 8px;
+  }
+  #lockedSection .locked-count {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-bottom: 6px;
+  }
+  #lockedStoreList {
+    max-height: 200px;
+    overflow-y: auto;
+    font-size: 11px;
+  }
+  .locked-store-tag {
+    display: inline-block;
+    background: rgba(3, 105, 161, 0.25);
+    border: 1px solid #0369a1;
+    color: #bae6fd;
+    border-radius: 4px;
+    padding: 2px 6px;
+    margin: 2px;
+    font-size: 10px;
+    cursor: pointer;
+  }
+  .locked-store-tag:hover {
+    background: rgba(3, 105, 161, 0.45);
+  }
+  #unlockAllBtn {
+    width: 100%;
+    padding: 5px 8px;
+    border-radius: 8px;
+    border: 1px solid #475569;
+    background: #1e293b;
+    color: #e2e8f0;
+    cursor: pointer;
+    font-size: 11px;
+    margin-top: 6px;
+  }
+  #unlockAllBtn:hover { background: #334155; }
   #controls {
     position: fixed; bottom: 20px; left: 20px; z-index: 1000;
     background: rgba(15, 23, 42, 0.92);
@@ -221,6 +415,28 @@
         熱力圖</button>
       <button class="toggle-btn active" id="btnDots" onclick="toggleDots()">📍
         門店標記</button>
+      <div id="lockedSection">
+        <h3>🔒 已鎖定門店</h3>
+        <div class="locked-count" id="lockedCount">0 家</div>
+        <div id="lockedStoreList"></div>
+        <button id="unlockAllBtn" type="button">🔓 解除鎖定</button>
+      </div>
+    </div>
+
+    <button id="toggleStoreList">📋 門店列表</button>
+
+    <div id="storeListPanel">
+      <div id="storeListHeader">
+        <div>
+          <h3>篩選後的門店列表</h3>
+          <span class="count" id="storeListCount">0 家門店</span>
+        </div>
+        <div class="store-list-actions">
+          <button id="lockStoreList" type="button">🔓 未鎖定</button>
+          <button id="closeStoreList">×</button>
+        </div>
+      </div>
+      <div id="storeListContent"></div>
     </div>
 
     <script src="./store_data.js"></script>
@@ -404,9 +620,79 @@ function filterStores(stores) {
 
 function applyCurrentFilters() {
   const filteredStores = filterStores(allStores);
-  updateStats(filteredStores);
-  updateHeat(filteredStores);
-  renderMarkers(filteredStores);
+  if (storeListLocked) {
+    const lockedDisplayStores = allStores.filter(s => lockedStoreIds.has(s.store_id));
+    updateStats(lockedDisplayStores);
+    updateHeat(lockedDisplayStores);
+    renderMarkers(lockedDisplayStores);
+    updateStoreList(lockedDisplayStores);
+  } else {
+    updateStats(filteredStores);
+    updateHeat(filteredStores);
+    renderMarkers(filteredStores);
+    updateStoreList(filteredStores);
+  }
+}
+
+function updateStoreList(stores) {
+  const storeListContent = document.getElementById('storeListContent');
+  const storeListCount = document.getElementById('storeListCount');
+  
+  storeListCount.textContent = storeListLocked
+    ? `${stores.length} 家門店（已鎖定）`
+    : `${stores.length} 家門店`;
+  
+  // Sort stores by store_id
+  const sortedStores = [...stores].sort((a, b) => {
+    const aNum = parseStoreNumericId(a.store_id);
+    const bNum = parseStoreNumericId(b.store_id);
+    if (Number.isFinite(aNum) && Number.isFinite(bNum)) {
+      return aNum - bNum;
+    }
+    return String(a.store_id).localeCompare(String(b.store_id));
+  });
+  
+  storeListContent.innerHTML = '';
+  
+  sortedStores.forEach(store => {
+    const storeItem = document.createElement('div');
+    storeItem.className = 'store-item';
+    
+    // Get all date metrics for this store
+    const storeIndex = STORE_META.findIndex(m => m[0] === store.store_id);
+    const allDateMixes = DATE_CONFIGS.map(cfg => {
+      const metrics = DATE_METRICS[cfg.key];
+      const mix = Number.isFinite(metrics.mix[storeIndex]) ? metrics.mix[storeIndex] : 0;
+      return { label: cfg.label.replace(/[📌🔥✅]/g, '').trim(), value: mix.toFixed(1) };
+    });
+    
+    // Build date mix HTML
+    const dateMixHTML = allDateMixes.map(dm => `
+      <div class="date-mix">
+        <span class="date-mix-label">${dm.label}</span>
+        <span class="date-mix-value">${dm.value}%</span>
+      </div>
+    `).join('');
+    
+    storeItem.innerHTML = `
+      <div class="store-item-header">
+        <span class="store-item-id">${store.store_id}</span>
+        <span class="store-item-type">${store.store_type}</span>
+      </div>
+      <div class="store-item-dates">
+        ${dateMixHTML}
+      </div>
+    `;
+    
+    // Click to fly to store on map
+    storeItem.addEventListener('click', () => {
+      if (Number.isFinite(store.lat) && Number.isFinite(store.lng)) {
+        map.flyTo([store.lat, store.lng], 13);
+      }
+    });
+    
+    storeListContent.appendChild(storeItem);
+  });
 }
 
 function renderLegendFilters() {
@@ -435,6 +721,8 @@ function renderLegendFilters() {
 const tooltip = document.getElementById('tooltip');
 let markers = [];
 let heatVisible = true, dotsVisible = true;
+let storeListLocked = false;
+let lockedStoreIds = new Set();
 
 function updateHeat(stores) {
   const heatData = stores
@@ -561,7 +849,89 @@ filterHardwareEl.addEventListener('change', applyCurrentFilters);
   });
 })();
 
+// Store list panel toggle
+const toggleStoreListBtn = document.getElementById('toggleStoreList');
+const closeStoreListBtn = document.getElementById('closeStoreList');
+const storeListPanel = document.getElementById('storeListPanel');
+const lockStoreListBtn = document.getElementById('lockStoreList');
+
+function updateStoreListLockButton() {
+  if (storeListLocked) {
+    lockStoreListBtn.textContent = '🔒 已鎖定';
+    lockStoreListBtn.classList.add('active');
+  } else {
+    lockStoreListBtn.textContent = '🔓 未鎖定';
+    lockStoreListBtn.classList.remove('active');
+  }
+}
+
+toggleStoreListBtn.addEventListener('click', () => {
+  storeListPanel.classList.toggle('visible');
+  toggleStoreListBtn.classList.toggle('hidden', storeListPanel.classList.contains('visible'));
+});
+
+closeStoreListBtn.addEventListener('click', () => {
+  storeListPanel.classList.remove('visible');
+  toggleStoreListBtn.classList.remove('hidden');
+});
+
+const lockedSectionEl = document.getElementById('lockedSection');
+const lockedCountEl = document.getElementById('lockedCount');
+const lockedStoreListEl = document.getElementById('lockedStoreList');
+const unlockAllBtn = document.getElementById('unlockAllBtn');
+
+function updateLockedSection() {
+  if (storeListLocked && lockedStoreIds.size > 0) {
+    lockedSectionEl.classList.add('visible');
+    lockedCountEl.textContent = `${lockedStoreIds.size} 家`;
+    const sortedIds = [...lockedStoreIds].sort((a, b) => {
+      const aNum = parseStoreNumericId(a);
+      const bNum = parseStoreNumericId(b);
+      if (Number.isFinite(aNum) && Number.isFinite(bNum)) return aNum - bNum;
+      return String(a).localeCompare(String(b));
+    });
+    lockedStoreListEl.innerHTML = sortedIds.map(id =>
+      `<span class="locked-store-tag" data-store-id="${id}">${id}</span>`
+    ).join('');
+    lockedStoreListEl.querySelectorAll('.locked-store-tag').forEach(tag => {
+      tag.addEventListener('click', () => {
+        const store = allStores.find(s => s.store_id === tag.dataset.storeId);
+        if (store && Number.isFinite(store.lat) && Number.isFinite(store.lng)) {
+          map.flyTo([store.lat, store.lng], 13);
+        }
+      });
+    });
+  } else {
+    lockedSectionEl.classList.remove('visible');
+    lockedStoreListEl.innerHTML = '';
+  }
+}
+
+lockStoreListBtn.addEventListener('click', () => {
+  if (storeListLocked) {
+    storeListLocked = false;
+    lockedStoreIds.clear();
+  } else {
+    const currentFilteredStores = filterStores(allStores);
+    lockedStoreIds = new Set(currentFilteredStores.map((store) => store.store_id));
+    storeListLocked = true;
+  }
+  updateStoreListLockButton();
+  updateLockedSection();
+  applyCurrentFilters();
+});
+
+unlockAllBtn.addEventListener('click', () => {
+  storeListLocked = false;
+  lockedStoreIds.clear();
+  updateStoreListLockButton();
+  updateLockedSection();
+  applyCurrentFilters();
+});
+
 renderLegendFilters();
+updateStoreListLockButton();
+updateLockedSection();
 applyDate(DATE_CONFIGS[0].key);
 </script>
   </body>
