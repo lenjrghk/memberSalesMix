@@ -39,6 +39,20 @@
     border: 1px solid #475569; border-radius: 8px;
     padding: 6px 8px; font-size: 12px;
   }
+  #datePlayBtn {
+    background: none;
+    border: 1px solid #475569;
+    border-radius: 50%;
+    width: 28px; height: 28px;
+    color: #e2e8f0;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  #datePlayBtn:hover { background: rgba(51, 65, 85, 0.6); }
+  #datePlayBtn.playing { border-color: #38bdf8; color: #38bdf8; }
   .stat {
     text-align: center;
   }
@@ -368,6 +382,7 @@
       <div class="date-picker">
         <label for="dateSelect">日期</label>
         <select id="dateSelect"></select>
+        <button id="datePlayBtn" type="button" title="自動播放日期">▶</button>
       </div>
       <div class="stats-bar">
         <div class="stat"><div class="val" id="stat-total">197</div><div
@@ -415,6 +430,7 @@
         熱力圖</button>
       <button class="toggle-btn active" id="btnDots" onclick="toggleDots()">📍
         門店標記</button>
+      <button class="toggle-btn" id="btnLockFilter">🔓 鎖定當前門店</button>
       <div id="lockedSection">
         <h3>🔒 已鎖定門店</h3>
         <div class="locked-count" id="lockedCount">0 家</div>
@@ -764,6 +780,7 @@ function renderMarkers(stores) {
         <div class="tip-row"><span class="tip-label">🎫 優惠券</span><span class="tip-value">${formatPercent(s.coupon_mix)}</span></div>
         <div class="tip-row"><span class="tip-label">銷售額</span><span class="tip-value">NT$ ${(Number.isFinite(s.amt) ? s.amt : 0).toLocaleString()}</span></div>
         <div class="mix-bar"><div class="mix-fill" style="width:${Math.max(0, Math.min(100, s.mix))}%;background:${barColor}"></div></div>
+        <div class="tip-row" style="margin-top:6px;border-top:1px solid #334155;padding-top:4px"><span class="tip-label">📅 日期： </span><span class="tip-value">${DATE_MAP[dateSelect.value]?.label || dateSelect.value}</span></div>
       `;
       // <div class="tip-row"><span class="tip-label">來客數 TC</span><span class="tip-value">${(Number.isFinite(s.tc) ? s.tc : 0).toLocaleString()}</span></div>
 
@@ -811,6 +828,42 @@ function toggleDots() {
 }
 
 dateSelect.addEventListener('change', (e) => applyDate(e.target.value));
+
+// Date auto-play
+const datePlayBtn = document.getElementById('datePlayBtn');
+let datePlayInterval = null;
+
+function stopDatePlay() {
+  clearInterval(datePlayInterval);
+  datePlayInterval = null;
+  datePlayBtn.textContent = '▶';
+  datePlayBtn.classList.remove('playing');
+}
+
+function startDatePlay() {
+  const keys = DATE_CONFIGS.map(c => c.key);
+  let idx = keys.indexOf(dateSelect.value);
+
+  datePlayBtn.textContent = '⏸';
+  datePlayBtn.classList.add('playing');
+
+  function next() {
+    idx = (idx + 1) % keys.length;
+    applyDate(keys[idx]);
+  }
+
+  next();
+  datePlayInterval = setInterval(next, 2000);
+}
+
+datePlayBtn.addEventListener('click', () => {
+  if (datePlayInterval) stopDatePlay();
+  else startDatePlay();
+});
+
+dateSelect.addEventListener('change', () => {
+  if (datePlayInterval) stopDatePlay();
+});
 legendSelectAllBtn.addEventListener('click', () => {
   selectedBandIndexes.clear();
   MIX_BANDS.forEach((_, idx) => selectedBandIndexes.add(idx));
@@ -854,14 +907,19 @@ const toggleStoreListBtn = document.getElementById('toggleStoreList');
 const closeStoreListBtn = document.getElementById('closeStoreList');
 const storeListPanel = document.getElementById('storeListPanel');
 const lockStoreListBtn = document.getElementById('lockStoreList');
+const btnLockFilter = document.getElementById('btnLockFilter');
 
 function updateStoreListLockButton() {
   if (storeListLocked) {
     lockStoreListBtn.textContent = '🔒 已鎖定';
     lockStoreListBtn.classList.add('active');
+    btnLockFilter.textContent = '🔒 已鎖定門店';
+    btnLockFilter.classList.add('active');
   } else {
     lockStoreListBtn.textContent = '🔓 未鎖定';
     lockStoreListBtn.classList.remove('active');
+    btnLockFilter.textContent = '🔓 鎖定當前門店';
+    btnLockFilter.classList.remove('active');
   }
 }
 
@@ -907,7 +965,7 @@ function updateLockedSection() {
   }
 }
 
-lockStoreListBtn.addEventListener('click', () => {
+function toggleLockStores() {
   if (storeListLocked) {
     storeListLocked = false;
     lockedStoreIds.clear();
@@ -919,7 +977,10 @@ lockStoreListBtn.addEventListener('click', () => {
   updateStoreListLockButton();
   updateLockedSection();
   applyCurrentFilters();
-});
+}
+
+lockStoreListBtn.addEventListener('click', toggleLockStores);
+btnLockFilter.addEventListener('click', toggleLockStores);
 
 unlockAllBtn.addEventListener('click', () => {
   storeListLocked = false;
