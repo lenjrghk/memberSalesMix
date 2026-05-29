@@ -86,6 +86,7 @@
       </div>
     </div>
 
+    <button id="mobileControlsToggle" type="button">⚙️</button>
     <button id="toggleStoreList">📋 門店列表</button>
 
     <div id="storeListPanel">
@@ -650,6 +651,20 @@ renderLegendFilters();
 updateStoreListLockButton();
 updateLockedSection();
 applyDate((DATE_CONFIGS.find(cfg => DATE_METRICS[cfg.key]) || DATE_CONFIGS[0]).key);
+
+// Mobile controls toggle
+(function() {
+  const toggleBtn = document.getElementById('mobileControlsToggle');
+  const controls = document.getElementById('controls');
+  if (!toggleBtn || !controls) return;
+  toggleBtn.addEventListener('click', () => {
+    controls.classList.toggle('mobile-visible');
+  });
+  // Close controls when tapping the map on mobile
+  document.getElementById('map').addEventListener('click', () => {
+    controls.classList.remove('mobile-visible');
+  });
+})();
 </script>
   </body>
 </html>
