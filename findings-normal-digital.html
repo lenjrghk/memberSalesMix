@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>一般店 會員銷售深度分析報告</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="store_data.js"></script>
+  <style>
+  :root {
+    --bg: #0f172a; --card: #1e293b; --border: #334155;
+    --text: #e2e8f0; --muted: #94a3b8; --dim: #64748b;
+    --blue: #38bdf8; --red: #f87171; --green: #4ade80;
+    --orange: #fb923c; --purple: #c084fc; --yellow: #fbbf24;
+    --cyan: #22d3ee; --pink: #f472b6; --teal: #2dd4bf;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.6;
+  }
+  .container { max-width: 1400px; margin: 0 auto; padding: 24px 20px; }
+
+  .report-header {
+    text-align: center; padding: 48px 20px 36px;
+    background: linear-gradient(180deg, #1e293b 0%, var(--bg) 100%);
+    border-bottom: 1px solid var(--border);
+  }
+  .report-header h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+  .report-header h1 span { color: var(--red); }
+  .report-header .subtitle { color: var(--muted); font-size: 15px; }
+  .report-header .date { color: var(--dim); font-size: 12px; margin-top: 4px; }
+
+  .kpi-row {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px;
+    margin: 32px 0;
+  }
+  .kpi {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 14px; text-align: center;
+  }
+  .kpi .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .kpi .value { font-size: 30px; font-weight: 800; }
+  .kpi .delta { font-size: 12px; margin-top: 4px; }
+  .kpi .value.red { color: var(--red); }
+  .kpi .value.green { color: var(--green); }
+  .kpi .value.blue { color: var(--blue); }
+  .kpi .value.orange { color: var(--orange); }
+  .kpi .value.purple { color: var(--purple); }
+  .kpi .delta.red { color: var(--red); }
+  .kpi .delta.green { color: var(--green); }
+
+  .section {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px; margin-bottom: 24px;
+  }
+  .section h2 {
+    font-size: 17px; font-weight: 700; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section h2 .icon { font-size: 20px; }
+  .section h3 { font-size: 14px; font-weight: 600; color: var(--muted); margin: 16px 0 8px; }
+
+  .chart-wrap { position: relative; height: 340px; margin: 12px 0; }
+  .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .chart-row .chart-wrap { height: 300px; }
+
+  .insight {
+    background: rgba(56,189,248,0.08); border-left: 3px solid var(--blue);
+    padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 16px 0;
+    font-size: 13px; color: var(--muted);
+  }
+  .insight strong { color: var(--text); }
+  .insight.warn { background: rgba(248,113,113,0.08); border-left-color: var(--red); }
+  .insight.good { background: rgba(74,222,128,0.08); border-left-color: var(--green); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 12px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+  td { padding: 8px 12px; border-bottom: 1px solid rgba(51,65,85,0.5); }
+  tr:hover td { background: rgba(56,189,248,0.05); }
+  .mono { font-family: "SF Mono", "Fira Code", monospace; font-size: 12px; }
+  .text-red { color: var(--red); }
+  .text-green { color: var(--green); }
+  .text-orange { color: var(--orange); }
+  .text-yellow { color: var(--yellow); }
+  .text-blue { color: var(--blue); }
+  .text-purple { color: var(--purple); }
+
+  .scrollable-table {
+    max-height: 600px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px;
+  }
+  .scrollable-table table { border-collapse: separate; border-spacing: 0; }
+  .scrollable-table thead { position: sticky; top: 0; z-index: 2; }
+  .scrollable-table thead th { background: #253349; }
+
+  .tag {
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
+    font-size: 11px; font-weight: 600;
+  }
+  .tag-red { background: rgba(248,113,113,0.15); color: var(--red); }
+  .tag-green { background: rgba(74,222,128,0.15); color: var(--green); }
+  .tag-blue { background: rgba(56,189,248,0.15); color: var(--blue); }
+  .tag-orange { background: rgba(251,146,60,0.15); color: var(--orange); }
+  .tag-purple { background: rgba(192,132,252,0.15); color: var(--purple); }
+  .tag-yellow { background: rgba(251,191,36,0.15); color: var(--yellow); }
+
+  .hypothesis-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0;
+  }
+  .hypo-card {
+    background: rgba(15,23,42,0.5); border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px;
+  }
+  .hypo-card h4 { font-size: 14px; margin-bottom: 8px; }
+  .hypo-card p { font-size: 12px; color: var(--muted); }
+  .evidence-bar { display: flex; gap: 3px; margin-top: 8px; }
+  .evidence-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .evidence-dot.filled { background: var(--orange); }
+  .evidence-dot.empty { background: var(--border); }
+
+  .action-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 16px; margin: 16px 0; }
+  .action-card {
+    background: rgba(15,23,42,0.5); border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px;
+  }
+  .action-card .role-tag { margin-bottom: 8px; }
+  .action-card h4 { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+  .action-card p { font-size: 12px; color: var(--muted); }
+
+  .category-list { margin: 12px 0; }
+  .category-item {
+    background: rgba(15,23,42,0.5); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 16px; margin-bottom: 10px;
+  }
+  .category-item h4 { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .category-item .examples { font-size: 12px; color: var(--dim); }
+
+  @media (max-width: 900px) {
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .chart-row { grid-template-columns: 1fr; }
+    .hypothesis-grid { grid-template-columns: 1fr; }
+  }
+  </style>
+</head>
+<body>
+
+<div class="report-header">
+  <h1>一般店 會員銷售<span>深度分析</span>報告</h1>
+  <div class="subtitle">162 家一般店 Kiosk Revamp 影響全面解析</div>
+  <div class="date">資料範圍：2025/12 ~ 2026/05/27 ｜ Kiosk Revamp：2026 年 3 月</div>
+</div>
+
+<div class="container">
+
+  <!-- KPI Row -->
+  <div class="kpi-row" id="kpiRow"></div>
+
+  <!-- Section 1 -->
+  <div class="section">
+    <h2><span class="icon">📈</span> 一般店 Mix 趨勢全景</h2>
+    <div class="chart-wrap"><canvas id="chartMixTrend"></canvas></div>
+    <div id="insightMixTrend" class="insight"></div>
+  </div>
+
+  <!-- Section 2 -->
+  <div class="section">
+    <h2><span class="icon">💰</span> 銷售額結構變化</h2>
+    <div class="chart-wrap"><canvas id="chartSalesStructure"></canvas></div>
+    <div id="insightSales" class="insight"></div>
+  </div>
+
+  <!-- Section 3 -->
+  <div class="section">
+    <h2><span class="icon">🖥️</span> 硬體版本 × 時間序列分析</h2>
+    <div class="chart-wrap"><canvas id="chartHwTrend"></canvas></div>
+    <div id="tableHw"></div>
+    <div id="insightHw" class="insight"></div>
+  </div>
+
+  <!-- Section 4 -->
+  <div class="section">
+    <h2><span class="icon">🗺️</span> 地區差異分析</h2>
+    <div class="chart-row">
+      <div class="chart-wrap"><canvas id="chartRegionTrend"></canvas></div>
+      <div class="chart-wrap"><canvas id="chartRegionDrop"></canvas></div>
+    </div>
+    <div id="tableRegion"></div>
+    <div id="insightRegion" class="insight"></div>
+  </div>
+
+  <!-- Section 5 -->
+  <div class="section">
+    <h2><span class="icon">📊</span> 門店規模 × 掉幅分析</h2>
+    <div class="chart-row">
+      <div class="chart-wrap"><canvas id="chartVolumeTrend"></canvas></div>
+      <div class="chart-wrap"><canvas id="chartVolumeScatter"></canvas></div>
+    </div>
+    <div id="insightVolume" class="insight"></div>
+  </div>
+
+  <!-- Section 6 -->
+  <div class="section">
+    <h2><span class="icon">🏪</span> 門店年齡效應分析</h2>
+    <div class="chart-wrap"><canvas id="chartAgeTrend"></canvas></div>
+    <div id="insightAge" class="insight"></div>
+  </div>
+
+  <!-- Section 7 -->
+  <div class="section">
+    <h2><span class="icon">🎯</span> Revamp 前 Mix 水準 vs 掉幅</h2>
+    <div class="chart-row">
+      <div class="chart-wrap"><canvas id="chartPreMixScatter"></canvas></div>
+      <div class="chart-wrap"><canvas id="chartQuartileRecovery"></canvas></div>
+    </div>
+    <div id="tableQuartile"></div>
+    <div id="insightPreMix" class="insight"></div>
+  </div>
+
+  <!-- Section 8 -->
+  <div class="section">
+    <h2><span class="icon">📉</span> 掉幅分佈與恢復軌跡分類</h2>
+    <div class="chart-row">
+      <div class="chart-wrap"><canvas id="chartDropHist"></canvas></div>
+      <div class="chart-wrap"><canvas id="chartRecoveryDonut"></canvas></div>
+    </div>
+    <div id="categoryList" class="category-list"></div>
+  </div>
+
+  <!-- Section 9 -->
+  <div class="section">
+    <h2><span class="icon">📐</span> 波動性分析</h2>
+    <div class="chart-wrap"><canvas id="chartVolatility"></canvas></div>
+    <div id="insightVolatility" class="insight"></div>
+  </div>
+
+  <!-- Section 10 -->
+  <div class="section">
+    <h2><span class="icon">🔍</span> 個店完整數據表</h2>
+    <h3>162 家一般店全月份 Mix 值 — 點擊欄位可排序</h3>
+    <div class="scrollable-table" id="fullTableWrap"></div>
+  </div>
+
+  <!-- Conclusion -->
+  <div class="section">
+    <h2><span class="icon">🧩</span> 根因假設矩陣</h2>
+    <div id="hypothesisGrid" class="hypothesis-grid"></div>
+  </div>
+
+  <!-- Next Steps -->
+  <div class="section">
+    <h2><span class="icon">🚀</span> 給 CRM Team / Dev Engineer / Product Manager 的行動建議</h2>
+    <div id="actionCards" class="action-cards"></div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  // ── Constants ──
+  const allKeys = ['202512','202601','202602','202603','202604','20260501~0518','20260514~0519','20260514~0520','20260521~0527','20260514~0527'];
+  const allLabels = ['2025/12','2026/01','2026/02','2026/03','2026/04','5/1~18','5/14~19','5/14~20','5/21~27','5/14~27'];
+  const FEB = '202602', MAR = '202603', MAY = '20260521~0527';
+
+  const normalIdx = STORE_TYPE.map((s,i) => s==='一般店' ? i : -1).filter(i=>i>=0);
+  const digitalIdx = STORE_TYPE.map((s,i) => s==='數位店' ? i : -1).filter(i=>i>=0);
+
+  // ── Helpers ──
+  function vals(indices, month, field) { return indices.map(i => DATE_METRICS[month][field][i]); }
+  function avg(arr) { const v = arr.filter(x => x!=null && !isNaN(x)); return v.length ? v.reduce((a,b)=>a+b,0)/v.length : 0; }
+  function sum(arr) { return arr.filter(x => x!=null && !isNaN(x)).reduce((a,b)=>a+b,0); }
+  function avgMix(indices, month) { return avg(vals(indices, month, 'mix')); }
+  function sumAmt(indices, month) { return sum(vals(indices, month, 'amt')); }
+  function memberAmt(indices, month) {
+    return indices.reduce((s,i) => {
+      const mix = DATE_METRICS[month].mix[i] / 100;
+      const amt = DATE_METRICS[month].amt[i];
+      return s + (amt * mix);
+    }, 0);
+  }
+  function percentile(arr, p) {
+    const sorted = [...arr].filter(x=>x!=null&&!isNaN(x)).sort((a,b)=>a-b);
+    if (!sorted.length) return 0;
+    const idx = (p/100)*(sorted.length-1);
+    const lo = Math.floor(idx), hi = Math.ceil(idx);
+    return lo===hi ? sorted[lo] : sorted[lo]*(hi-idx)+sorted[hi]*(idx-lo);
+  }
+  function stddev(arr) {
+    const v = arr.filter(x=>x!=null&&!isNaN(x));
+    if (v.length<2) return 0;
+    const m = avg(v);
+    return Math.sqrt(v.reduce((s,x)=>s+(x-m)**2,0)/(v.length-1));
+  }
+
+  // Region classification
+  function getRegion(addr) {
+    if (/台北|新北|基隆|宜蘭/.test(addr)) return '北部';
+    if (/桃園|新竹/.test(addr)) return '桃竹';
+    if (/台中|彰化|南投|雲林|苗栗/.test(addr)) return '中部';
+    if (/台南|嘉義|高雄|屏東/.test(addr)) return '南部';
+    if (/花蓮|台東/.test(addr)) return '東部';
+    return '其他';
+  }
+
+  // HW normalization
+  function normalizeHW(hw) {
+    if (!hw) return 'Unknown';
+    const m = hw.match(/^(V\d|D\d)/);
+    return m ? m[1] : hw.split(',')[0].trim().replace(/\*.*/,'');
+  }
+
+  // Store ID number extraction
+  function storeIdNum(i) {
+    const id = STORE_META[i][0];
+    const m = id.match(/(\d+)$/);
+    return m ? parseInt(m[1]) : 999;
+  }
+
+  // Chart defaults
+  Chart.defaults.color = '#94a3b8';
+  Chart.defaults.borderColor = '#334155';
+  Chart.defaults.font.family = '-apple-system, "Noto Sans TC", sans-serif';
+  Chart.defaults.font.size = 11;
+  const COLORS = ['#38bdf8','#f87171','#4ade80','#fb923c','#c084fc','#fbbf24','#22d3ee','#f472b6','#2dd4bf','#a78bfa'];
+
+  // ── KPI Row ──
+  const febMixN = avgMix(normalIdx, FEB);
+  const marMixN = avgMix(normalIdx, MAR);
+  const mayMixN = avgMix(normalIdx, MAY);
+  const mixDrop = marMixN - febMixN;
+
+  const febMemAmt = memberAmt(normalIdx, FEB);
+  const marMemAmt = memberAmt(normalIdx, MAR);
+  const memAmtChange = ((marMemAmt - febMemAmt) / febMemAmt * 100);
+
+  const febNonMemAmt = sumAmt(normalIdx, FEB) - febMemAmt;
+  const marNonMemAmt = sumAmt(normalIdx, MAR) - marMemAmt;
+  const nonMemAmtChange = ((marNonMemAmt - febNonMemAmt) / febNonMemAmt * 100);
+
+  const affectedCount = normalIdx.filter(i => {
+    return (DATE_METRICS[FEB].mix[i] - DATE_METRICS[MAR].mix[i]) > 5;
+  }).length;
+  const affectedRatio = (affectedCount / normalIdx.length * 100);
+
+  const mayGap = mayMixN - febMixN;
+
+  document.getElementById('kpiRow').innerHTML = `
+    <div class="kpi"><div class="label">Feb→Mar Mix 掉幅</div><div class="value red">${mixDrop.toFixed(1)}pp</div><div class="delta red">${febMixN.toFixed(1)}% → ${marMixN.toFixed(1)}%</div></div>
+    <div class="kpi"><div class="label">會員銷售額變化</div><div class="value ${memAmtChange>=0?'green':'red'}">${memAmtChange>=0?'+':''}${memAmtChange.toFixed(1)}%</div><div class="delta">Feb → Mar</div></div>
+    <div class="kpi"><div class="label">非會員銷售額變化</div><div class="value ${nonMemAmtChange>=0?'green':'orange'}">${nonMemAmtChange>=0?'+':''}${nonMemAmtChange.toFixed(1)}%</div><div class="delta">Feb → Mar</div></div>
+    <div class="kpi"><div class="label">受影響門店 (掉>5pp)</div><div class="value orange">${affectedRatio.toFixed(0)}%</div><div class="delta">${affectedCount} / ${normalIdx.length} 家</div></div>
+    <div class="kpi"><div class="label">最新 May vs Feb 缺口</div><div class="value ${mayGap>=0?'green':'purple'}">${mayGap>=0?'+':''}${mayGap.toFixed(1)}pp</div><div class="delta">5/21~27: ${mayMixN.toFixed(1)}%</div></div>
+  `;
+
+  // ── Section 1: Mix Trend ──
+  const normalAvg = allKeys.map(k => avgMix(normalIdx, k));
+  const digitalAvg = allKeys.map(k => avgMix(digitalIdx, k));
+  const q1 = allKeys.map(k => percentile(vals(normalIdx, k, 'mix'), 25));
+  const median = allKeys.map(k => percentile(vals(normalIdx, k, 'mix'), 50));
+  const q3 = allKeys.map(k => percentile(vals(normalIdx, k, 'mix'), 75));
+
+  new Chart(document.getElementById('chartMixTrend'), {
+    type: 'line',
+    data: {
+      labels: allLabels,
+      datasets: [
+        { label: 'Q3 (75th)', data: q3, borderColor: 'rgba(56,189,248,0.3)', backgroundColor: 'rgba(56,189,248,0.08)', fill: '+2', borderWidth: 1, pointRadius: 0 },
+        { label: '一般店 平均', data: normalAvg, borderColor: '#38bdf8', borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#38bdf8', tension: 0.3 },
+        { label: 'Q1 (25th)', data: q1, borderColor: 'rgba(56,189,248,0.3)', backgroundColor: 'transparent', fill: false, borderWidth: 1, pointRadius: 0 },
+        { label: '中位數', data: median, borderColor: '#fbbf24', borderWidth: 1.5, borderDash: [4,3], pointRadius: 2, tension: 0.3 },
+        { label: '數位店 (參考)', data: digitalAvg, borderColor: '#c084fc', borderWidth: 1.5, borderDash: [6,3], pointRadius: 2, tension: 0.3 },
+        { label: 'Feb 基線', data: allLabels.map(() => febMixN), borderColor: 'rgba(248,113,113,0.5)', borderWidth: 1, borderDash: [8,4], pointRadius: 0 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 14, padding: 12 } },
+        tooltip: { mode: 'index', intersect: false }
+      },
+      scales: {
+        y: { title: { display: true, text: 'Member Mix %' }, grid: { color: 'rgba(51,65,85,0.4)' } },
+        x: { grid: { color: 'rgba(51,65,85,0.2)' } }
+      }
+    }
+  });
+
+  const latestRecovery = (mayMixN - marMixN).toFixed(1);
+  document.getElementById('insightMixTrend').innerHTML = `
+    <strong>📌 趨勢摘要：</strong>一般店會員 Mix 從 Feb ${febMixN.toFixed(1)}% 驟降至 Mar ${marMixN.toFixed(1)}%（掉 ${Math.abs(mixDrop).toFixed(1)}pp）。
+    截至 5/21~27 恢復到 ${mayMixN.toFixed(1)}%，回升 ${latestRecovery}pp。數位店同期走勢可作為對照基線。
+    Q1-Q3 帶狀區間顯示門店間差異幅度。
+  `;
+
+  // ── Section 2: Sales Structure ──
+  const memAmts = allKeys.map(k => memberAmt(normalIdx, k));
+  const nonMemAmts = allKeys.map(k => sumAmt(normalIdx, k) - memberAmt(normalIdx, k));
+  const mixLine = allKeys.map(k => avgMix(normalIdx, k));
+
+  new Chart(document.getElementById('chartSalesStructure'), {
+    type: 'bar',
+    data: {
+      labels: allLabels,
+      datasets: [
+        { label: '會員銷售額', data: memAmts, backgroundColor: 'rgba(56,189,248,0.7)', stack: 'a', yAxisID: 'y', order: 2 },
+        { label: '非會員銷售額', data: nonMemAmts, backgroundColor: 'rgba(248,113,113,0.5)', stack: 'a', yAxisID: 'y', order: 2 },
+        { label: '會員 Mix %', data: mixLine, type: 'line', borderColor: '#fbbf24', borderWidth: 2, pointRadius: 3, yAxisID: 'y1', order: 1 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 14 } }, tooltip: { mode: 'index' } },
+      scales: {
+        y: { stacked: true, title: { display: true, text: '銷售額 (NTD)' }, grid: { color: 'rgba(51,65,85,0.4)' },
+          ticks: { callback: v => (v/1e6).toFixed(0)+'M' } },
+        y1: { position: 'right', min: 30, max: 80, title: { display: true, text: 'Mix %' }, grid: { drawOnChartArea: false } },
+        x: { stacked: true, grid: { color: 'rgba(51,65,85,0.2)' } }
+      }
+    }
+  });
+
+  document.getElementById('insightSales').innerHTML = `
+    <strong>💡 結構觀察：</strong>Mar 總銷售額 ${(sumAmt(normalIdx,MAR)/1e6).toFixed(0)}M vs Feb ${(sumAmt(normalIdx,FEB)/1e6).toFixed(0)}M。
+    會員銷售額變化 ${memAmtChange.toFixed(1)}%，非會員銷售額變化 ${nonMemAmtChange>=0?'+':''}${nonMemAmtChange.toFixed(1)}%。
+    若非會員大幅上升而會員不變，說明會員「仍在消費但未被識別」。
+  `;
+
+  // ── Section 3: HW Trend ──
+  const hwGroups = {};
+  normalIdx.forEach(i => {
+    const hw = normalizeHW(STORE_HW[i]);
+    if (!hwGroups[hw]) hwGroups[hw] = [];
+    hwGroups[hw].push(i);
+  });
+  const hwNames = Object.keys(hwGroups).sort();
+
+  const hwDatasets = hwNames.map((hw, ci) => ({
+    label: `${hw} (n=${hwGroups[hw].length})`,
+    data: allKeys.map(k => avgMix(hwGroups[hw], k)),
+    borderColor: COLORS[ci % COLORS.length],
+    borderWidth: 2,
+    pointRadius: 3,
+    tension: 0.3
+  }));
+
+  new Chart(document.getElementById('chartHwTrend'), {
+    type: 'line',
+    data: { labels: allLabels, datasets: hwDatasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 14 } }, tooltip: { mode: 'index', intersect: false } },
+      scales: {
+        y: { title: { display: true, text: 'Avg Mix %' }, grid: { color: 'rgba(51,65,85,0.4)' } },
+        x: { grid: { color: 'rgba(51,65,85,0.2)' } }
+      }
+    }
+  });
+
+  let hwTableHTML = '<table><thead><tr><th>硬體版本</th><th>門店數</th><th>Feb Mix</th><th>Mar Mix</th><th>掉幅</th><th>May Mix</th><th>恢復</th></tr></thead><tbody>';
+  hwNames.forEach(hw => {
+    const g = hwGroups[hw];
+    const feb = avgMix(g, FEB), mar = avgMix(g, MAR), may = avgMix(g, MAY);
+    const drop = mar - feb, rec = may - mar;
+    hwTableHTML += `<tr><td>${hw}</td><td>${g.length}</td><td class="mono">${feb.toFixed(1)}%</td><td class="mono">${mar.toFixed(1)}%</td>
+      <td class="mono text-red">${drop.toFixed(1)}pp</td><td class="mono">${may.toFixed(1)}%</td>
+      <td class="mono ${rec>0?'text-green':'text-red'}">${rec>=0?'+':''}${rec.toFixed(1)}pp</td></tr>`;
+  });
+  hwTableHTML += '</tbody></table>';
+  document.getElementById('tableHw').innerHTML = hwTableHTML;
+
+  const hwDrops = hwNames.map(hw => avgMix(hwGroups[hw], MAR) - avgMix(hwGroups[hw], FEB));
+  const worstHW = hwNames[hwDrops.indexOf(Math.min(...hwDrops))];
+  const bestHW = hwNames[hwDrops.indexOf(Math.max(...hwDrops))];
+  document.getElementById('insightHw').innerHTML = `
+    <strong>🖥️ 硬體差異：</strong>掉幅最大的版本為 ${worstHW}（${Math.min(...hwDrops).toFixed(1)}pp），
+    最小為 ${bestHW}（${Math.max(...hwDrops).toFixed(1)}pp）。
+    觀察各版本在 Revamp 後的回升速度是否有顯著差異。
+  `;
+
+  // ── Section 4: Region ──
+  const regionGroups = {};
+  const regionOrder = ['北部','桃竹','中部','南部','東部','其他'];
+  normalIdx.forEach(i => {
+    const r = getRegion(STORE_META[i][1]);
+    if (!regionGroups[r]) regionGroups[r] = [];
+    regionGroups[r].push(i);
+  });
+  const regionNames = regionOrder.filter(r => regionGroups[r] && regionGroups[r].length > 0);
+
+  const regionColors = { '北部':'#38bdf8', '桃竹':'#4ade80', '中部':'#fb923c', '南部':'#f87171', '東部':'#c084fc', '其他':'#64748b' };
+
+  const regionTrendDS = regionNames.map(r => ({
+    label: `${r} (n=${regionGroups[r].length})`,
+    data: allKeys.map(k => avgMix(regionGroups[r], k)),
+    borderColor: regionColors[r] || '#94a3b8',
+    borderWidth: 2, pointRadius: 3, tension: 0.3
+  }));
+
+  new Chart(document.getElementById('chartRegionTrend'), {
+    type: 'line',
+    data: { labels: allLabels, datasets: regionTrendDS },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }, tooltip: { mode: 'index', intersect: false },
+        title: { display: true, text: '各地區 Mix 趨勢', color: '#e2e8f0', font: { size: 13 } } },
+      scales: {
+        y: { title: { display: true, text: 'Mix %' }, grid: { color: 'rgba(51,65,85,0.4)' } },
+        x: { grid: { color: 'rgba(51,65,85,0.2)' } }
+      }
+    }
+  });
+
+  const regionDropData = regionNames.map(r => avgMix(regionGroups[r], MAR) - avgMix(regionGroups[r], FEB));
+  new Chart(document.getElementById('chartRegionDrop'), {
+    type: 'bar',
+    data: {
+      labels: regionNames,
+      datasets: [{ label: 'Feb→Mar 掉幅 (pp)', data: regionDropData, backgroundColor: regionNames.map(r => regionColors[r]||'#94a3b8') }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+      plugins: { legend: { display: false }, title: { display: true, text: '各地區 Feb→Mar 掉幅', color: '#e2e8f0', font: { size: 13 } } },
+      scales: {
+        x: { title: { display: true, text: 'pp' }, grid: { color: 'rgba(51,65,85,0.4)' } },
+        y: { grid: { display: false } }
+      }
+    }
+  });
+
+  let regionTableHTML = '<table><thead><tr><th>地區</th><th>門店數</th><th>Feb Mix</th><th>Mar Mix</th><th>May Mix</th><th>掉幅</th><th>恢復</th></tr></thead><tbody>';
+  regionNames.forEach(r => {
+    const g = regionGroups[r];
+    const feb = avgMix(g, FEB), mar = avgMix(g, MAR), may = avgMix(g, MAY);
+    const drop = mar - feb, rec = may - mar;
+    regionTableHTML += `<tr><td>${r}</td><td>${g.length}</td><td class="mono">${feb.toFixed(1)}%</td><td class="mono">${mar.toFixed(1)}%</td>
+      <td class="mono">${may.toFixed(1)}%</td><td class="mono text-red">${drop.toFixed(1)}pp</td>
+      <td class="mono ${rec>0?'text-green':'text-red'}">${rec>=0?'+':''}${rec.toFixed(1)}pp</td></tr>`;
+  });
+  regionTableHTML += '</tbody></table>';
+  document.getElementById('tableRegion').innerHTML = regionTableHTML;
+
+  const worstRegion = regionNames[regionDropData.indexOf(Math.min(...regionDropData))];
+  const bestRegion = regionNames[regionDropData.indexOf(Math.max(...regionDropData))];
+  document.getElementById('insightRegion').innerHTML = `
+    <strong>🗺️ 地區差異：</strong>掉幅最大地區為 ${worstRegion}（${Math.min(...regionDropData).toFixed(1)}pp），
+    最小為 ${bestRegion}（${Math.max(...regionDropData).toFixed(1)}pp）。
+    若差異顯著，可能與地區營運或門店組合相關。
+  `;
+
+  // ── Section 5: Volume Tier ──
+  const febAmts = normalIdx.map(i => DATE_METRICS[FEB].amt[i]);
+  const amtSorted = [...febAmts].sort((a,b)=>a-b);
+  const q25Amt = percentile(febAmts, 25), q50Amt = percentile(febAmts, 50), q75Amt = percentile(febAmts, 75);
+
+  function volTier(amt) {
+    if (amt <= q25Amt) return '小型 (Q1)';
+    if (amt <= q50Amt) return '中型 (Q2)';
+    if (amt <= q75Amt) return '大型 (Q3)';
+    return '超大 (Q4)';
+  }
+
+  const volGroups = {};
+  const volOrder = ['小型 (Q1)','中型 (Q2)','大型 (Q3)','超大 (Q4)'];
+  normalIdx.forEach((idx, j) => {
+    const tier = volTier(febAmts[j]);
+    if (!volGroups[tier]) volGroups[tier] = [];
+    volGroups[tier].push(idx);
+  });
+
+  const volTrendDS = volOrder.filter(t=>volGroups[t]).map((t, ci) => ({
+    label: `${t} (n=${volGroups[t].length})`,
+    data: allKeys.map(k => avgMix(volGroups[t], k)),
+    borderColor: COLORS[ci], borderWidth: 2, pointRadius: 3, tension: 0.3
+  }));
+
+  new Chart(document.getElementById('chartVolumeTrend'), {
+    type: 'line',
+    data: { labels: allLabels, datasets: volTrendDS },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } },
+        title: { display: true, text: '各規模門店 Mix 趨勢', color: '#e2e8f0', font: { size: 13 } } },
+      scales: {
+        y: { title: { display: true, text: 'Mix %' }, grid: { color: 'rgba(51,65,85,0.4)' } },
+        x: { grid: { color: 'rgba(51,65,85,0.2)' } }
+      }
+    }
+  });
+
+  const scatterVolData = normalIdx.map((idx,j) => ({
+    x: febAmts[j] / 1e6,
+    y: DATE_METRICS[FEB].mix[idx] - DATE_METRICS[MAR].mix[idx]
+  }));
+
+  new Chart(document.getElementById('chartVolumeScatter'), {
+    type: 'scatter',
+    data: {
+      datasets: [{ label: 'Feb銷售額 vs 掉幅', data: scatterVolData, backgroundColor: 'rgba(56,189,248,0.5)', pointRadius: 4 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        title: { display: true, text: 'Feb 銷售額 vs Feb→Mar 掉幅', color: '#e2e8f0', font: { size: 13 } } },
+      scales: {
+        x: { title: { display: true, text: 'Feb 銷售額 (M)' }, grid: { color: 'rgba(51,65,85,0.4)' } },
+        y: { title: { display: true, text: '掉幅 (pp)' }, grid: { color: 'rgba(51,65,85,0.4)' } }
+      }
+    }
+  });
+
+  const volDrops = volOrder.filter(t=>volGroups[t]).map(t => (avgMix(volGroups[t], MAR) - avgMix(volGroups[t], FEB)).toFixed(1));
+  document.getElementById('insightVolume').innerHTML = `
+    <strong>📊 規模效應：</strong>各規模 Feb→Mar 掉幅分別為 ${volOrder.filter(t=>volGroups[t]).map((t,i) => `${t}: ${volDrops[i]}pp`).join('、')}。
+    散佈圖觀察大店與小店的掉幅是否有系統性差異。
+  `;
+
+  // ── Section 6: Store Age ──
+  function ageTier(i) {
+    const id = STORE_META[i][0];
+    if (/TWB/.test(id)) return '最新 (TWB系列)';
+    const num = storeIdNum(i);
+    if (num < 100) return '早期 (<100)';
+    if (num < 180) return '中期 (100-179)';
+    if (num < 220) return '較新 (180-219)';
+    return '最新 (220+)';
+  }
+
+  const ageGroups = {};
+  const ageOrder = ['早期 (<100)','中期 (100-179)','較新 (180-219)','最新 (220+)','最新 (TWB系列)'];
+  normalIdx.forEach(i => {
+    const tier = ageTier(i);
+    if (!ageGroups[tier]) ageGroups[tier] = [];
+    ageGroups[tier].push(i);
+  });
+
+  const ageTrendDS = ageOrder.filter(t=>ageGroups[t]&&ageGroups[t].length>0).map((t, ci) => ({
+    label: `${t} (n=${ageGroups[t].length})`,
+    data: allKeys.map(k => avgMix(ageGroups[t], k)),
+    borderColor: COLORS[ci], borderWidth: 2, pointRadius: 3, tension: 0.3
+  }));
+
+  new Chart(document.getElementById('chartAgeTrend'), {
+    type: 'line',
+    data: { labels: allLabels, datasets: ageTrendDS },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 14 } }, tooltip: { mode: 'index', intersect: false } },
+      scales: {
+        y: { title: { display: true, text: 'Avg Mix %' }, grid: { color: 'rgba(51,65,85,0.4)' } },
+        x: { grid: { color: 'rgba(51,65,85,0.2)' } }
+      }
+    }
+  });
+
+  const ageDrops = ageOrder.filter(t=>ageGroups[t]&&ageGroups[t].length>0).map(t => (avgMix(ageGroups[t], MAR) - avgMix(ageGroups[t], FEB)).toFixed(1));
+  document.getElementById('insightAge').innerHTML = `
+    <strong>🏪 年齡效應：</strong>各世代 Feb→Mar 掉幅為 ${ageOrder.filter(t=>ageGroups[t]&&ageGroups[t].length>0).map((t,i) => `${t}: ${ageDrops[i]}pp`).join('、')}。
+    較新門店是否因更依賴 Kiosk 而受衝擊更大？
+  `;
+
+  // ── Section 7: Pre-Mix vs Drop ──
+  const preMixDropData = normalIdx.map(i => ({
+    x: DATE_METRICS[FEB].mix[i],
+    y: DATE_METRICS[FEB].mix[i] - DATE_METRICS[MAR].mix[i]
+  }));
+
+  new Chart(document.getElementById('chartPreMixScatter'), {
+    type: 'scatter',
+    data: {
+      datasets: [{ label: 'Feb Mix vs 掉幅', data: preMixDropData, backgroundColor: 'rgba(251,146,60,0.5)', pointRadius: 4 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        title: { display: true, text: 'Pre-Revamp Mix vs 掉幅', color: '#e2e8f0', font: { size: 13 } } },
+      scales: {
+        x: { title: { display: true, text: 'Feb Mix %' }, grid: { color: 'rgba(51,65,85,0.4)' } },
+        y: { title: { display: true, text: '掉幅 (pp)' }, grid: { color: 'rgba(51,65,85,0.4)' } }
+      }
+    }
+  });
+
+  // Quartile analysis
+  const febMixes = normalIdx.map(i => DATE_METRICS[FEB].mix[i]);
+  const mixQ25 = percentile(febMixes, 25), mixQ50 = percentile(febMixes, 50), mixQ75 = percentile(febMixes, 75);
+  function mixQuartile(v) {
+    if (v <= mixQ25) return 'Q1 (低Mix)';
+    if (v <= mixQ50) return 'Q2';
+    if (v <= mixQ75) return 'Q3';
+    return 'Q4 (高Mix)';
+  }
+  const mqGroups = {};
+  const mqOrder = ['Q1 (低Mix)','Q2','Q3','Q4 (高Mix)'];
+  normalIdx.forEach(i => {
+    const q = mixQuartile(DATE_METRICS[FEB].mix[i]);
+    if (!mqGroups[q]) mqGroups[q] = [];
+    mqGroups[q].push(i);
+  });
+
+  const mqRecoveryDS = mqOrder.filter(q=>mqGroups[q]).map((q, ci) => ({
+    label: q,
+    data: allKeys.map(k => avgMix(mqGroups[q], k)),
+    borderColor: COLORS[ci], borderWidth: 2, pointRadius: 3, tension: 0.3
+  }));
+
+  new Chart(document.getElementById('chartQuartileRecovery'), {
+    type: 'line',
+    data: { labels: allLabels, datasets: mqRecoveryDS },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } },
+        title: { display: true, text: '各 Mix 四分位恢復軌跡', color: '#e2e8f0', font: { size: 13 } } },
+      scales: {
+        y: { title: { display: true, text: 'Mix %' }, grid: { color: 'rgba(51,65,85,0.4)' } },
+        x: { grid: { color: 'rgba(51,65,85,0.2)' } }
+      }
+    }
+  });
+
+  let mqTableHTML = '<table><thead><tr><th>四分位</th><th>門店數</th><th>Feb Mix</th><th>Mar Mix</th><th>掉幅</th><th>May Mix</th><th>恢復</th></tr></thead><tbody>';
+  mqOrder.filter(q=>mqGroups[q]).forEach(q => {
+    const g = mqGroups[q];
+    const feb = avgMix(g, FEB), mar = avgMix(g, MAR), may = avgMix(g, MAY);
+    mqTableHTML += `<tr><td>${q}</td><td>${g.length}</td><td class="mono">${feb.toFixed(1)}%</td><td class="mono">${mar.toFixed(1)}%</td>
+      <td class="mono text-red">${(mar-feb).toFixed(1)}pp</td><td class="mono">${may.toFixed(1)}%</td>
+      <td class="mono ${(may-mar)>0?'text-green':'text-red'}">${(may-mar)>=0?'+':''}${(may-mar).toFixed(1)}pp</td></tr>`;
+  });
+  mqTableHTML += '</tbody></table>';
+  document.getElementById('tableQuartile').innerHTML = mqTableHTML;
+
+  document.getElementById('insightPreMix').innerHTML = `
+    <strong>🎯 高 Mix 門店受衝擊更大？</strong>Q4（高 Mix）Feb→Mar 掉幅 ${(avgMix(mqGroups['Q4 (高Mix)']||[], MAR) - avgMix(mqGroups['Q4 (高Mix)']||[], FEB)).toFixed(1)}pp
+    vs Q1（低 Mix）${(avgMix(mqGroups['Q1 (低Mix)']||[], MAR) - avgMix(mqGroups['Q1 (低Mix)']||[], FEB)).toFixed(1)}pp。
+    高度依賴會員識別的門店在 Revamp 後可能受創更深。
+  `;
+
+  // ── Section 8: Drop Distribution & Recovery ──
+  const drops = normalIdx.map(i => DATE_METRICS[FEB].mix[i] - DATE_METRICS[MAR].mix[i]);
+  const bins = [-20,-15,-10,-5,0,5,10,15,20,25,30];
+  const binLabels = bins.slice(0,-1).map((b,i) => `${b}~${bins[i+1]}`);
+  const binCounts = binLabels.map((_,i) => drops.filter(d => d >= bins[i] && d < bins[i+1]).length);
+
+  new Chart(document.getElementById('chartDropHist'), {
+    type: 'bar',
+    data: {
+      labels: binLabels,
+      datasets: [{ label: '門店數', data: binCounts, backgroundColor: binLabels.map((_,i) => bins[i] < 0 ? 'rgba(74,222,128,0.6)' : 'rgba(248,113,113,0.6)') }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        title: { display: true, text: 'Feb→Mar 掉幅分佈 (pp)', color: '#e2e8f0', font: { size: 13 } } },
+      scales: {
+        y: { title: { display: true, text: '門店數' }, grid: { color: 'rgba(51,65,85,0.4)' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  // Recovery trajectory classification
+  function classifyRecovery(i) {
+    const drop = DATE_METRICS[FEB].mix[i] - DATE_METRICS[MAR].mix[i];
+    const mayMix = DATE_METRICS[MAY].mix[i];
+    const marMix = DATE_METRICS[MAR].mix[i];
+    const febMix = DATE_METRICS[FEB].mix[i];
+
+    if (drop < 3) return '微幅影響';
+    const recovery = (mayMix - marMix) / drop;
+    if (mayMix < marMix) return '持續惡化';
+    if (recovery >= 0.7) return 'V型回升';
+    if (recovery >= 0.3) return 'U型緩升';
+    return 'L型停滯';
+  }
+
+  const recCategories = { 'V型回升': [], 'U型緩升': [], 'L型停滯': [], '持續惡化': [], '微幅影響': [] };
+  const recColors = { 'V型回升': '#4ade80', 'U型緩升': '#fbbf24', 'L型停滯': '#fb923c', '持續惡化': '#f87171', '微幅影響': '#94a3b8' };
+  const recOrder = ['V型回升','U型緩升','L型停滯','持續惡化','微幅影響'];
+
+  normalIdx.forEach(i => {
+    const cat = classifyRecovery(i);
+    recCategories[cat].push(i);
+  });
+
+  new Chart(document.getElementById('chartRecoveryDonut'), {
+    type: 'doughnut',
+    data: {
+      labels: recOrder,
+      datasets: [{
+        data: recOrder.map(c => recCategories[c].length),
+        backgroundColor: recOrder.map(c => recColors[c]),
+        borderColor: '#1e293b', borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10 } },
+        title: { display: true, text: '恢復軌跡分類', color: '#e2e8f0', font: { size: 13 } }
+      }
+    }
+  });
+
+  let catHTML = '';
+  recOrder.forEach(cat => {
+    const stores = recCategories[cat];
+    const examples = stores.slice(0, 5).map(i => {
+      const drop = (DATE_METRICS[FEB].mix[i] - DATE_METRICS[MAR].mix[i]).toFixed(1);
+      const rec = (DATE_METRICS[MAY].mix[i] - DATE_METRICS[MAR].mix[i]).toFixed(1);
+      return `${STORE_META[i][0]}(掉${drop}pp, 回${rec}pp)`;
+    }).join('、');
+    catHTML += `<div class="category-item">
+      <h4><span class="tag" style="background:${recColors[cat]}22;color:${recColors[cat]}">${cat}</span> — ${stores.length} 家 (${(stores.length/normalIdx.length*100).toFixed(0)}%)</h4>
+      <div class="examples">代表門店：${examples || '無'}</div>
+    </div>`;
+  });
+  document.getElementById('categoryList').innerHTML = catHTML;
+
+  // ── Section 9: Volatility ──
+  const preKeys = ['202512','202601','202602'];
+  const postKeys = ['202603','202604','20260521~0527'];
+
+  const volScatterData = normalIdx.map(i => {
+    const preVals = preKeys.map(k => DATE_METRICS[k].mix[i]);
+    const postVals = postKeys.map(k => DATE_METRICS[k].mix[i]);
+    return { x: stddev(preVals), y: DATE_METRICS[FEB].mix[i] - DATE_METRICS[MAR].mix[i], postStd: stddev(postVals) };
+  });
+
+  new Chart(document.getElementById('chartVolatility'), {
+    type: 'scatter',
+    data: {
+      datasets: [
+        { label: 'Pre穩定度 vs 掉幅', data: volScatterData.map(d=>({x:d.x,y:d.y})),
+          backgroundColor: volScatterData.map(d => d.postStd > 8 ? 'rgba(248,113,113,0.6)' : 'rgba(56,189,248,0.5)'),
+          pointRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: (ctx) => `Pre σ: ${ctx.raw.x.toFixed(1)}, 掉幅: ${ctx.raw.y.toFixed(1)}pp` } } },
+      scales: {
+        x: { title: { display: true, text: 'Pre-Revamp σ (Dec/Jan/Feb)' }, grid: { color: 'rgba(51,65,85,0.4)' } },
+        y: { title: { display: true, text: 'Feb→Mar 掉幅 (pp)' }, grid: { color: 'rgba(51,65,85,0.4)' } }
+      }
+    }
+  });
+
+  const highVolStores = volScatterData.filter(d => d.x > 5);
+  const lowVolStores = volScatterData.filter(d => d.x <= 5);
+  const highVolDrop = avg(highVolStores.map(d => d.y));
+  const lowVolDrop = avg(lowVolStores.map(d => d.y));
+  document.getElementById('insightVolatility').innerHTML = `
+    <strong>📐 波動性觀察：</strong>Pre-Revamp 高波動門店（σ>5, n=${highVolStores.length}）平均掉幅 ${highVolDrop.toFixed(1)}pp，
+    低波動門店（σ≤5, n=${lowVolStores.length}）平均掉幅 ${lowVolDrop.toFixed(1)}pp。
+    紅色點代表 Post-Revamp 波動仍高（σ>8）的門店。
+  `;
+
+  // ── Section 10: Full Table ──
+  const storeRows = normalIdx.map(i => {
+    const id = STORE_META[i][0];
+    const hw = normalizeHW(STORE_HW[i]);
+    const region = getRegion(STORE_META[i][1]);
+    const febAmt = DATE_METRICS[FEB].amt[i];
+    const mixVals = allKeys.map(k => DATE_METRICS[k].mix[i]);
+    const drop = mixVals[2] - mixVals[3]; // Feb - Mar
+    const recovery = mixVals[8] - mixVals[3]; // May(5/21~27) - Mar
+    return { i, id, hw, region, febAmt, mixVals, drop, recovery };
+  });
+
+  let sortCol = 'drop';
+  let sortDir = -1;
+
+  function renderFullTable() {
+    const sorted = [...storeRows].sort((a,b) => {
+      let va = a[sortCol], vb = b[sortCol];
+      if (typeof va === 'string') return sortDir * va.localeCompare(vb);
+      return sortDir * (va - vb);
+    });
+
+    const top10Drops = [...storeRows].sort((a,b)=>b.drop-a.drop).slice(0,10).map(r=>r.i);
+    const top10Recovery = [...storeRows].sort((a,b)=>b.recovery-a.recovery).slice(0,10).map(r=>r.i);
+
+    function mixColor(v) {
+      if (v >= 60) return 'text-green';
+      if (v >= 50) return 'text-yellow';
+      return 'text-red';
+    }
+
+    let html = `<table><thead><tr>
+      <th style="cursor:pointer" data-col="id">門店 ID ↕</th>
+      <th data-col="hw">HW ↕</th>
+      <th data-col="region">地區 ↕</th>
+      <th data-col="febAmt">Feb 銷售額 ↕</th>`;
+    allLabels.forEach((l,ci) => { html += `<th data-col="mix${ci}">${l} ↕</th>`; });
+    html += `<th data-col="drop">掉幅 ↕</th><th data-col="recovery">恢復 ↕</th><th>標記</th></tr></thead><tbody>`;
+
+    sorted.forEach(r => {
+      const isWorst = top10Drops.includes(r.i);
+      const isBest = top10Recovery.includes(r.i);
+      const rowStyle = isWorst ? 'background:rgba(248,113,113,0.08)' : isBest ? 'background:rgba(74,222,128,0.08)' : '';
+
+      html += `<tr style="${rowStyle}"><td class="mono">${r.id}</td><td>${r.hw}</td><td>${r.region}</td>
+        <td class="mono">${(r.febAmt/1e6).toFixed(2)}M</td>`;
+      r.mixVals.forEach(v => { html += `<td class="mono ${mixColor(v)}">${v.toFixed(1)}</td>`; });
+      html += `<td class="mono ${r.drop>0?'text-red':'text-green'}">${r.drop.toFixed(1)}</td>`;
+      html += `<td class="mono ${r.recovery>0?'text-green':'text-red'}">${r.recovery>=0?'+':''}${r.recovery.toFixed(1)}</td>`;
+      html += `<td>${isWorst ? '<span class="tag tag-red">TOP10掉</span>' : ''}${isBest ? '<span class="tag tag-green">TOP10恢復</span>' : ''}</td>`;
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    document.getElementById('fullTableWrap').innerHTML = html;
+
+    document.getElementById('fullTableWrap').querySelectorAll('th[data-col]').forEach(th => {
+      th.style.cursor = 'pointer';
+      th.addEventListener('click', () => {
+        const col = th.dataset.col;
+        if (col.startsWith('mix')) {
+          const ci = parseInt(col.replace('mix',''));
+          sortCol = 'mixVals';
+          storeRows.forEach(r => r._sortMix = r.mixVals[ci]);
+          sortCol = '_sortMix';
+        } else {
+          sortCol = col;
+        }
+        sortDir *= -1;
+        renderFullTable();
+      });
+    });
+  }
+  renderFullTable();
+
+  // ── Hypothesis Matrix ──
+  const hypotheses = [
+    { title: 'UX 流程中斷', desc: '新 Kiosk UI 的會員識別流程可能步驟增加或路徑不直觀，導致顧客跳過會員掃描。', evidence: 4 },
+    { title: '特定硬體版本互動問題', desc: '某些硬體版本（如 V2/D1）在新軟體下可能出現掃描速度慢或相容性問題。', evidence: 3 },
+    { title: '地區營運差異', desc: '不同地區的門市人員培訓程度或顧客引導方式可能影響 Revamp 後的會員識別率。', evidence: 2 },
+    { title: '門店規模效應', desc: '大型門店交易量高、排隊壓力大，可能在新 UI 下更容易跳過會員步驟。', evidence: 2 },
+    { title: '門店成熟度效應', desc: '較新門店的客群可能尚未養成掃會員習慣，Revamp 後更容易流失。', evidence: 2 },
+    { title: 'Pre-Revamp 依賴度', desc: '原本高 Mix 的門店代表高度依賴舊流程，變更後衝擊最大。', evidence: 4 }
+  ];
+
+  document.getElementById('hypothesisGrid').innerHTML = hypotheses.map(h => `
+    <div class="hypo-card">
+      <h4>${h.title}</h4>
+      <p>${h.desc}</p>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+        <span style="font-size:11px;color:var(--dim)">證據強度</span>
+        <div class="evidence-bar">
+          ${Array.from({length:5},(_, i) => `<div class="evidence-dot ${i<h.evidence?'filled':'empty'}"></div>`).join('')}
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  // ── Action Cards ──
+  const actions = [
+    { role: 'CRM Team', tag: 'tag-blue', title: '會員客群分級分析', desc: '依購買頻率與金額將會員分群，分析各群在 Revamp 前後的識別率變化，找出流失最多的客群。' },
+    { role: 'CRM Team', tag: 'tag-blue', title: '會員再活化推播', desc: '對 3 月後「消失」的會員交易發送 APP 推播或 SMS，驗證是否為「未掃碼」而非「未消費」。' },
+    { role: 'CRM Team', tag: 'tag-blue', title: '門市端會員引導 SOP', desc: '製作新 Kiosk 會員掃碼引導 SOP，針對掉幅 TOP 20 門店優先培訓。' },
+    { role: 'Dev Engineer', tag: 'tag-green', title: 'UX 漏斗埋點', desc: '在 Kiosk 結帳流程中加入事件埋點：進入掃碼頁 → 掃碼成功 → 結帳完成，量化每一步流失率。' },
+    { role: 'Dev Engineer', tag: 'tag-green', title: 'A/B 測試新舊流程', desc: '選 20 家門店還原舊版 UX 作為對照組，2 週後比較 Mix 差異，確認因果關係。' },
+    { role: 'Dev Engineer', tag: 'tag-green', title: '硬體版本專項除錯', desc: '針對掉幅最大的硬體版本（${worstHW}）做實機測試，確認掃碼速度、NFC 穩定度。' },
+    { role: 'Product Manager', tag: 'tag-purple', title: '階段性回滾策略', desc: '若 A/B 測試確認新 UX 為主因，備妥 Rollback Plan，先恢復 TOP 50 受影響門店。' },
+    { role: 'Product Manager', tag: 'tag-purple', title: '地區試點策略', desc: '選擇掉幅最大地區（${worstRegion}）做密集修復試點，驗證修復效果後再全面推廣。' },
+    { role: 'Product Manager', tag: 'tag-purple', title: '恢復指標 Dashboard', desc: '建立每日 Mix 監控儀表板，設定目標：4 週內恢復到 Feb 水準的 90%，追蹤各門店軌跡。' }
+  ];
+
+  document.getElementById('actionCards').innerHTML = actions.map(a => `
+    <div class="action-card">
+      <div class="role-tag"><span class="tag ${a.tag}">${a.role}</span></div>
+      <h4>${a.title}</h4>
+      <p>${a.desc}</p>
+    </div>
+  `).join('');
+
+})();
+</script>
+
+</body>
+</html>
