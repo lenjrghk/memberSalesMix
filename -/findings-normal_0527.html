@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>一般店 深度對比分析：Dec~Feb 基線 vs May 2026</title>
+    <title>一般店 深度對比分析：Dec 2025 vs May 2026</title>
     <script
       src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-    <script src="store_data_0529.js"></script>
+    <script src="store_data.js"></script>
     <style>
   :root {
     --bg: #0f172a; --card: #1e293b; --border: #334155;
@@ -152,16 +152,16 @@
   <body>
 
     <div class="report-header">
-      <h1>一般店 深度對比分析：Dec~Feb 基線 vs May 2026</h1>
+      <h1>一般店 會員銷售 深度對比分析</h1>
       <div class="versus">
-        <div class="vs-box vs-dec">🔵 Dec~Feb 基線<br><span
-            style="font-size:12px;font-weight:400">Pre-Revamp</span></div>
+        <div class="vs-box vs-dec">🔵 Dec 2025<br><span
+            style="font-size:12px;font-weight:400">Pre-Revamp 基線</span></div>
         <div class="vs-text">VS</div>
-        <div class="vs-box vs-may">🟠 May 14~28<br><span
+        <div class="vs-box vs-may">🟠 May 14~27<br><span
             style="font-size:12px;font-weight:400">最新完整週期</span></div>
       </div>
-      <div class="subtitle">162 家一般店 ｜ Kiosk Revamp (2026/03) 前後全面復盤</div>
-      <div class="date">基線期 Dec 2025~Feb 2026 vs 最新 May 14~28 資料</div>
+      <div class="subtitle">162 家一般店 ｜ Kiosk Revamp (2026/03) 前後 ~5 個月全面復盤</div>
+      <div class="date">中間月份 (Jan / Feb / Mar / Apr / May局部) 作為輔助參照</div>
     </div>
 
     <div class="container">
@@ -171,28 +171,28 @@
 
       <!-- Section 1: Head-to-head comparison cards -->
       <div class="section">
-        <h2><span class="icon">⚖️</span> Dec~Feb vs May 核心指標對比</h2>
+        <h2><span class="icon">⚖️</span> Dec vs May 核心指標對比</h2>
         <div id="compareCards"></div>
         <div id="insightCompare" class="insight highlight"></div>
       </div>
 
       <!-- Section 2: Journey Timeline -->
       <div class="section">
-        <h2><span class="icon">📈</span> 完整旅程：Dec~Feb → May 軌跡全景</h2>
+        <h2><span class="icon">📈</span> 完整旅程：Dec → May 軌跡全景</h2>
         <div class="chart-wrap"><canvas id="chartJourney"></canvas></div>
         <div id="insightJourney" class="insight"></div>
       </div>
 
       <!-- Section 3: Dec vs May scatter -->
       <div class="section">
-        <h2><span class="icon">🎯</span> 個店 Dec~Feb Mix vs May Mix 對照</h2>
+        <h2><span class="icon">🎯</span> 個店 Dec Mix vs May Mix 對照</h2>
         <div class="chart-wrap"><canvas id="chartDecVsMay"></canvas></div>
         <div id="insightScatter" class="insight"></div>
       </div>
 
       <!-- Section 4: Gap Distribution -->
       <div class="section">
-        <h2><span class="icon">📊</span> Dec~Feb→May 缺口分佈與分類</h2>
+        <h2><span class="icon">📊</span> Dec→May 缺口分佈與分類</h2>
         <div class="chart-row">
           <div class="chart-wrap"><canvas id="chartGapHist"></canvas></div>
           <div class="chart-wrap"><canvas id="chartOutcomeDonut"></canvas></div>
@@ -202,7 +202,7 @@
 
       <!-- Section 5: HW comparison -->
       <div class="section">
-        <h2><span class="icon">🖥️</span> 硬體版本：Dec~Feb vs May 對比</h2>
+        <h2><span class="icon">🖥️</span> 硬體版本：Dec vs May 對比</h2>
         <div class="chart-row">
           <div class="chart-wrap"><canvas id="chartHwCompare"></canvas></div>
           <div class="chart-wrap"><canvas id="chartHwJourney"></canvas></div>
@@ -213,7 +213,7 @@
 
       <!-- Section 6: Region comparison -->
       <div class="section">
-        <h2><span class="icon">🗺️</span> 地區：Dec~Feb vs May 對比</h2>
+        <h2><span class="icon">🗺️</span> 地區：Dec vs May 對比</h2>
         <div class="chart-row">
           <div class="chart-wrap"><canvas
               id="chartRegionCompare"></canvas></div>
@@ -226,7 +226,7 @@
 
       <!-- Section 7: Volume tier -->
       <div class="section">
-        <h2><span class="icon">💰</span> 門店規模 × Dec~Feb→May 變化</h2>
+        <h2><span class="icon">💰</span> 門店規模 × Dec→May 變化</h2>
         <div class="chart-row">
           <div class="chart-wrap"><canvas id="chartVolCompare"></canvas></div>
           <div class="chart-wrap"><canvas id="chartVolScatter"></canvas></div>
@@ -236,7 +236,7 @@
 
       <!-- Section 8: Store age -->
       <div class="section">
-        <h2><span class="icon">🏪</span> 門店年齡 × Dec~Feb→May 變化</h2>
+        <h2><span class="icon">🏪</span> 門店年齡 × Dec→May 變化</h2>
         <div class="chart-row">
           <div class="chart-wrap"><canvas id="chartAgeCompare"></canvas></div>
           <div class="chart-wrap"><canvas id="chartAgeJourney"></canvas></div>
@@ -244,16 +244,19 @@
         <div id="insightAge" class="insight"></div>
       </div>
 
-      <!-- Section 9: Dec Mix vs Gap analysis -->
+      <!-- Section 9: Recovery depth analysis -->
       <div class="section">
-        <h2><span class="icon">🔬</span> Dec~Feb Mix 水準 vs May 缺口分析</h2>
-        <div class="chart-wrap"><canvas id="chartDecMixVsGap"></canvas></div>
+        <h2><span class="icon">🔬</span> 掉幅深度 vs 恢復程度（以 Dec 為基準）</h2>
+        <div class="chart-row">
+          <div class="chart-wrap"><canvas id="chartDropRecovery"></canvas></div>
+          <div class="chart-wrap"><canvas id="chartDecMixVsGap"></canvas></div>
+        </div>
         <div id="insightRecovery" class="insight"></div>
       </div>
 
-      <!-- Section 10: May sub-windows comparison -->
+      <!-- Section 10: Weekday pattern hypothesis -->
       <div class="section">
-        <h2><span class="icon">📅</span> May 子窗口差異分析（5/14~27 vs 5/14~28）</h2>
+        <h2><span class="icon">📅</span> May 子窗口差異分析</h2>
         <div class="chart-row">
           <div class="chart-wrap"><canvas id="chartMayWindows"></canvas></div>
           <div class="chart-wrap"><canvas id="chartWindowCorr"></canvas></div>
@@ -263,16 +266,16 @@
 
       <!-- Section 11: Full data table -->
       <div class="section">
-        <h2><span class="icon">🔍</span> 個店完整數據（Dec~Feb 與 May 為主軸）</h2>
+        <h2><span class="icon">🔍</span> 個店完整數據（Dec 與 May 為主軸）</h2>
         <h3>162 家一般店 — 點擊欄位可排序，<span
-            style="color:var(--dec)">藍底</span>=Dec~Feb，<span
+            style="color:var(--dec)">藍底</span>=Dec，<span
             style="color:var(--may)">橘底</span>=May</h3>
         <div class="scrollable-table" id="fullTableWrap"></div>
       </div>
 
       <!-- Hypothesis matrix -->
       <div class="section">
-        <h2><span class="icon">🧩</span> 根因假設矩陣（Dec~Feb→May 視角）</h2>
+        <h2><span class="icon">🧩</span> 根因假設矩陣（Dec→May 視角）</h2>
         <div id="hypothesisGrid" class="hypothesis-grid"></div>
       </div>
 
@@ -287,18 +290,17 @@
     <script>
 (function() {
   // ── Constants ──
-  const allKeys = ['202512~202502','20260514~0527','20260514~0528'];
-  const allLabels = ['Dec~Feb','5/14~27','5/14~28'];
+  const allKeys = ['202512','202601','202602','202603','202604','20260501~0518','20260514~0519','20260514~0520','20260521~0527','20260514~0527'];
+  const allLabels = ['2025/12','2026/01','2026/02','2026/03','2026/04','5/1~18','5/14~19','5/14~20','5/21~27','5/14~27'];
 
   // Primary comparison endpoints
-  const DEC = '202512~202502';
-  const MAY = '20260514~0528';
-  const DEC_LABEL = 'Dec~Feb';
-  const MAY_LABEL = 'May 14~28';
+  const DEC = '202512';
+  const MAY = '20260514~0527';
+  const DEC_LABEL = 'Dec 2025';
+  const MAY_LABEL = 'May 14~27';
 
-  // Previous May window for comparison
-  const MAY_PREV = '20260514~0527';
-  const MAY_PREV_LABEL = 'May 14~27';
+  // Auxiliary reference points
+  const FEB = '202602', MAR = '202603', APR = '202604';
 
   const normalIdx = STORE_TYPE.map((s,i) => s==='一般店' ? i : -1).filter(i=>i>=0);
   const digitalIdx = STORE_TYPE.map((s,i) => s==='數位店' ? i : -1).filter(i=>i>=0);
@@ -365,7 +367,8 @@
   // ── Core Metrics ──
   const decMixAvg = avgMix(normalIdx, DEC);
   const mayMixAvg = avgMix(normalIdx, MAY);
-  const mayPrevMixAvg = avgMix(normalIdx, MAY_PREV);
+  const marMixAvg = avgMix(normalIdx, MAR);
+  const febMixAvg = avgMix(normalIdx, FEB);
   const gap = mayMixAvg - decMixAvg;
 
   const decMemAmt = memberAmt(normalIdx, DEC);
@@ -381,18 +384,19 @@
   const worsenedCount = storeGaps.filter(d => d > 0).length;
   const severeCount = storeGaps.filter(d => d > 10).length;
 
-  // Day-over-day improvement (5/14~27 → 5/14~28)
-  const dayImproveCount = normalIdx.filter(i =>
-    DATE_METRICS[MAY].mix[i] >= DATE_METRICS[MAY_PREV].mix[i]
-  ).length;
+  // Max drop at Mar from Dec
+  const maxDropAtMar = decMixAvg - marMixAvg;
+  // Recovery from Mar trough
+  const recoveryFromTrough = mayMixAvg - marMixAvg;
+  const recoveryPct = maxDropAtMar > 0 ? (recoveryFromTrough / maxDropAtMar * 100) : 0;
 
   // ── KPI Row ──
   document.getElementById('kpiRow').innerHTML = `
-    <div class="kpi"><div class="label">Dec~Feb Mix 基線</div><div class="value blue">${decMixAvg.toFixed(1)}%</div><div class="delta" style="color:var(--dim)">Pre-Revamp</div></div>
-    <div class="kpi"><div class="label">May Mix 最新</div><div class="value orange">${mayMixAvg.toFixed(1)}%</div><div class="delta" style="color:var(--dim)">5/14~28</div></div>
-    <div class="kpi"><div class="label">Dec~Feb→May 缺口</div><div class="value ${gap>=0?'green':'red'}">${gap>=0?'+':''}${gap.toFixed(1)}pp</div><div class="delta ${gap>=0?'green':'red'}">${gap>=0?'已超越基線':'尚未回到基線'}</div></div>
-    <div class="kpi"><div class="label">May 14~27 Mix</div><div class="value yellow">${mayPrevMixAvg.toFixed(1)}%</div><div class="delta" style="color:var(--dim)">前一窗口</div></div>
-    <div class="kpi"><div class="label">門店改善數</div><div class="value ${dayImproveCount>normalIdx.length/2?'green':'yellow'}">${dayImproveCount}</div><div class="delta">5/14~27→28 改善</div></div>
+    <div class="kpi"><div class="label">Dec Mix 基線</div><div class="value blue">${decMixAvg.toFixed(1)}%</div><div class="delta" style="color:var(--dim)">Pre-Revamp</div></div>
+    <div class="kpi"><div class="label">May Mix 最新</div><div class="value orange">${mayMixAvg.toFixed(1)}%</div><div class="delta" style="color:var(--dim)">5/14~27</div></div>
+    <div class="kpi"><div class="label">Dec→May 缺口</div><div class="value ${gap>=0?'green':'red'}">${gap>=0?'+':''}${gap.toFixed(1)}pp</div><div class="delta ${gap>=0?'green':'red'}">尚未回到基線</div></div>
+    <div class="kpi"><div class="label">最深掉幅 (Mar)</div><div class="value red">-${maxDropAtMar.toFixed(1)}pp</div><div class="delta">Mar: ${marMixAvg.toFixed(1)}%</div></div>
+    <div class="kpi"><div class="label">已恢復</div><div class="value ${recoveryPct>=70?'green':'yellow'}">${recoveryPct.toFixed(0)}%</div><div class="delta green">+${recoveryFromTrough.toFixed(1)}pp from Mar</div></div>
     <div class="kpi"><div class="label">仍惡化門店</div><div class="value red">${worsenedCount}</div><div class="delta">其中嚴重(>10pp): ${severeCount}</div></div>
   `;
 
@@ -433,14 +437,17 @@
 
   const sigmaChange = stddev(vals(normalIdx,MAY,'mix')) - stddev(vals(normalIdx,DEC,'mix'));
   document.getElementById('insightCompare').innerHTML = `
-    <strong>⚖️ 總覽：</strong>Dec~Feb 平均 Mix ${decMixAvg.toFixed(1)}% → May ${mayMixAvg.toFixed(1)}%，缺口 ${gap.toFixed(1)}pp。
+    <strong>⚖️ 總覽：</strong>Dec 平均 Mix ${decMixAvg.toFixed(1)}% → May ${mayMixAvg.toFixed(1)}%，缺口 ${gap.toFixed(1)}pp。
     中位數從 ${decMixMedian.toFixed(1)}% → ${mayMixMedian.toFixed(1)}%。
     標準差${sigmaChange>0?'增加':'減少'} ${Math.abs(sigmaChange).toFixed(1)}，顯示門店間差異${sigmaChange>0?'擴大':'收斂'}。
-    ${improvedCount} 家門店 May 表現優於 Dec~Feb，${worsenedCount} 家仍落後。
+    ${improvedCount} 家門店 May 表現優於 Dec，${worsenedCount} 家仍落後。
   `;
 
-  // ── Section 2: Journey Timeline (3 points) ──
+  // ── Section 2: Journey Timeline ──
   const normalAvg = allKeys.map(k => avgMix(normalIdx, k));
+  const q1Line = allKeys.map(k => percentile(vals(normalIdx, k, 'mix'), 25));
+  const q3Line = allKeys.map(k => percentile(vals(normalIdx, k, 'mix'), 75));
+  const medianLine = allKeys.map(k => percentile(vals(normalIdx, k, 'mix'), 50));
   const digitalAvg = allKeys.map(k => avgMix(digitalIdx, k));
 
   new Chart(document.getElementById('chartJourney'), {
@@ -448,14 +455,17 @@
     data: {
       labels: allLabels,
       datasets: [
-        { label: '一般店 平均', data: normalAvg, borderColor: '#38bdf8', borderWidth: 2.5,
-          pointBackgroundColor: allKeys.map(k => k===DEC ? DEC_COLOR : MAY_COLOR),
-          pointBorderColor: allKeys.map(k => '#fff'),
-          pointBorderWidth: 2,
-          pointRadius: 7,
+        { label: 'Q3 (75th)', data: q3Line, borderColor: 'rgba(56,189,248,0.25)', backgroundColor: 'rgba(56,189,248,0.06)', fill: '+2', borderWidth: 1, pointRadius: 0 },
+        { label: '一般店 平均', data: normalAvg, borderColor: '#38bdf8', borderWidth: 2.5, pointRadius: 4,
+          pointBackgroundColor: allKeys.map((k,i) => k===DEC ? DEC_COLOR : k===MAY ? MAY_COLOR : '#38bdf8'),
+          pointBorderColor: allKeys.map((k,i) => k===DEC ? '#fff' : k===MAY ? '#fff' : 'transparent'),
+          pointBorderWidth: allKeys.map(k => k===DEC||k===MAY ? 2 : 0),
+          pointRadius: allKeys.map(k => k===DEC||k===MAY ? 7 : 3),
           tension: 0.3 },
-        { label: '數位店 (參考)', data: digitalAvg, borderColor: '#c084fc', borderWidth: 1.5, borderDash: [6,3], pointRadius: 4, tension: 0.3 },
-        { label: 'Dec~Feb 基線', data: allLabels.map(() => decMixAvg), borderColor: 'rgba(56,189,248,0.4)', borderWidth: 1, borderDash: [8,4], pointRadius: 0 }
+        { label: 'Q1 (25th)', data: q1Line, borderColor: 'rgba(56,189,248,0.25)', fill: false, borderWidth: 1, pointRadius: 0 },
+        { label: '中位數', data: medianLine, borderColor: '#fbbf24', borderWidth: 1.5, borderDash: [4,3], pointRadius: 2, tension: 0.3 },
+        { label: '數位店 (參考)', data: digitalAvg, borderColor: '#c084fc', borderWidth: 1.5, borderDash: [6,3], pointRadius: 2, tension: 0.3 },
+        { label: 'Dec 基線', data: allLabels.map(() => decMixAvg), borderColor: 'rgba(56,189,248,0.4)', borderWidth: 1, borderDash: [8,4], pointRadius: 0 }
       ]
     },
     options: {
@@ -472,13 +482,10 @@
     }
   });
 
-  const mayDelta = mayMixAvg - mayPrevMixAvg;
   document.getElementById('insightJourney').innerHTML = `
-    <strong>📈 旅程摘要：</strong>Dec~Feb 基線 ${decMixAvg.toFixed(1)}%
-    → May 14~27 ${mayPrevMixAvg.toFixed(1)}%
-    → May 14~28 ${mayMixAvg.toFixed(1)}%（日增 ${mayDelta>=0?'+':''}${mayDelta.toFixed(2)}pp）。
-    距離基線缺口 ${Math.abs(gap).toFixed(1)}pp。
-    數位店同期平均 ${avgMix(digitalIdx, MAY).toFixed(1)}% 作為參照。
+    <strong>📈 旅程摘要：</strong>Dec ${decMixAvg.toFixed(1)}% → 3月最深 ${marMixAvg.toFixed(1)}%（掉 ${maxDropAtMar.toFixed(1)}pp）
+    → May 回升至 ${mayMixAvg.toFixed(1)}%。已恢復掉幅的 ${recoveryPct.toFixed(0)}%，剩餘缺口 ${Math.abs(gap).toFixed(1)}pp。
+    <strong>Dec 與 May 的大圓點</strong>為本報告著重比較的兩個端點。
   `;
 
   // ── Section 3: Dec vs May scatter ──
@@ -495,7 +502,7 @@
         { label: '門店', data: scatterData,
           backgroundColor: scatterData.map(d => d.y >= d.x ? 'rgba(74,222,128,0.6)' : 'rgba(248,113,113,0.5)'),
           pointRadius: 4.5 },
-        { label: '等值線 (Dec~Feb=May)', data: [{x:20,y:20},{x:100,y:100}], type: 'line',
+        { label: '等值線 (Dec=May)', data: [{x:20,y:20},{x:100,y:100}], type: 'line',
           borderColor: 'rgba(148,163,184,0.5)', borderWidth: 1, borderDash: [6,4], pointRadius: 0, fill: false }
       ]
     },
@@ -503,11 +510,11 @@
       responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { position: 'bottom', labels: { boxWidth: 14 } },
-        tooltip: { callbacks: { label: ctx => ctx.raw.label ? `${ctx.raw.label}: Dec~Feb ${ctx.raw.x.toFixed(1)}% → May ${ctx.raw.y.toFixed(1)}%` : '' } }
+        tooltip: { callbacks: { label: ctx => ctx.raw.label ? `${ctx.raw.label}: Dec ${ctx.raw.x.toFixed(1)}% → May ${ctx.raw.y.toFixed(1)}%` : '' } }
       },
       scales: {
-        x: { title: { display: true, text: 'Dec~Feb Mix %' }, grid: { color: 'rgba(51,65,85,0.4)' }, min: 20, max: 100 },
-        y: { title: { display: true, text: 'May 14~28 Mix %' }, grid: { color: 'rgba(51,65,85,0.4)' }, min: 20, max: 100 }
+        x: { title: { display: true, text: 'Dec 2025 Mix %' }, grid: { color: 'rgba(51,65,85,0.4)' }, min: 20, max: 100 },
+        y: { title: { display: true, text: 'May 14~27 Mix %' }, grid: { color: 'rgba(51,65,85,0.4)' }, min: 20, max: 100 }
       }
     }
   });
@@ -515,8 +522,8 @@
   const aboveLine = scatterData.filter(d => d.y >= d.x).length;
   const belowLine = scatterData.filter(d => d.y < d.x).length;
   document.getElementById('insightScatter').innerHTML = `
-    <strong>🎯 個店對照：</strong>等值線上方（<span class="text-green">綠點</span>）= May ≥ Dec~Feb，下方（<span class="text-red">紅點</span>）= May < Dec~Feb。
-    <strong>${aboveLine}</strong> 家門店已恢復或超越 Dec~Feb 水準，<strong>${belowLine}</strong> 家仍低於 Dec~Feb。
+    <strong>🎯 個店對照：</strong>等值線上方（<span class="text-green">綠點</span>）= May ≥ Dec，下方（<span class="text-red">紅點</span>）= May < Dec。
+    <strong>${aboveLine}</strong> 家門店已恢復或超越 Dec 水準，<strong>${belowLine}</strong> 家仍低於 Dec。
     點越遠離等值線代表落差越大。
   `;
 
@@ -538,7 +545,7 @@
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false },
-        title: { display: true, text: 'Dec~Feb→May 缺口分佈 (pp)：正值=掉落', color: '#e2e8f0', font: { size: 13 } } },
+        title: { display: true, text: 'Dec→May 缺口分佈 (pp)：正值=掉落', color: '#e2e8f0', font: { size: 13 } } },
       scales: {
         y: { title: { display: true, text: '門店數' }, grid: { color: 'rgba(51,65,85,0.4)' } },
         x: { grid: { display: false } }
@@ -546,21 +553,22 @@
     }
   });
 
-  // Outcome classification (Dec~Feb→May perspective, no Mar data)
+  // Outcome classification (Dec→May perspective)
   function classifyOutcome(i) {
     const decMix = DATE_METRICS[DEC].mix[i];
     const mayMix = DATE_METRICS[MAY].mix[i];
-    const mayPrevMix = DATE_METRICS[MAY_PREV].mix[i];
+    const marMix = DATE_METRICS[MAR].mix[i];
     const gapFromDec = decMix - mayMix;
 
-    if (gapFromDec <= 0) return '✅ 已超越 Dec~Feb';
+    if (gapFromDec <= 0) return '✅ 已超越 Dec';
     if (gapFromDec <= 3) return '🟡 接近恢復 (≤3pp)';
-    if (mayMix >= mayPrevMix) return '🔶 仍有缺口但趨勢改善';
-    return '🔴 仍有缺口且趨勢惡化';
+    if (mayMix > marMix) return '🔶 恢復中但有缺口';
+    if (mayMix <= marMix) return '🔴 未恢復或惡化';
+    return '🔶 恢復中但有缺口';
   }
 
-  const outcomeOrder = ['✅ 已超越 Dec~Feb', '🟡 接近恢復 (≤3pp)', '🔶 仍有缺口但趨勢改善', '🔴 仍有缺口且趨勢惡化'];
-  const outcomeColors = { '✅ 已超越 Dec~Feb': '#4ade80', '🟡 接近恢復 (≤3pp)': '#fbbf24', '🔶 仍有缺口但趨勢改善': '#fb923c', '🔴 仍有缺口且趨勢惡化': '#f87171' };
+  const outcomeOrder = ['✅ 已超越 Dec', '🟡 接近恢復 (≤3pp)', '🔶 恢復中但有缺口', '🔴 未恢復或惡化'];
+  const outcomeColors = { '✅ 已超越 Dec': '#4ade80', '🟡 接近恢復 (≤3pp)': '#fbbf24', '🔶 恢復中但有缺口': '#fb923c', '🔴 未恢復或惡化': '#f87171' };
   const outcomeGroups = {};
   outcomeOrder.forEach(c => outcomeGroups[c] = []);
   normalIdx.forEach(i => { outcomeGroups[classifyOutcome(i)].push(i); });
@@ -579,7 +587,7 @@
       responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10 } },
-        title: { display: true, text: 'Dec~Feb→May 結果分類', color: '#e2e8f0', font: { size: 13 } }
+        title: { display: true, text: 'Dec→May 結果分類', color: '#e2e8f0', font: { size: 13 } }
       }
     }
   });
@@ -590,7 +598,7 @@
     if (!stores.length) return;
     const examples = stores.slice(0, 6).map(i => {
       const d = DATE_METRICS[DEC].mix[i], m = DATE_METRICS[MAY].mix[i];
-      return `${STORE_META[i][0]}(Dec~Feb:${d.toFixed(0)}→May:${m.toFixed(0)})`;
+      return `${STORE_META[i][0]}(Dec:${d.toFixed(0)}→May:${m.toFixed(0)})`;
     }).join('、');
     catHTML += `<div class="category-item">
       <h4><span class="tag" style="background:${outcomeColors[cat]}22;color:${outcomeColors[cat]}">${cat}</span> — ${stores.length} 家 (${(stores.length/normalIdx.length*100).toFixed(0)}%)</h4>
@@ -616,7 +624,7 @@
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { position: 'bottom' },
-        title: { display: true, text: '硬體版本 Dec~Feb vs May', color: '#e2e8f0', font: { size: 13 } } },
+        title: { display: true, text: '硬體版本 Dec vs May', color: '#e2e8f0', font: { size: 13 } } },
       scales: {
         y: { title: { display: true, text: 'Mix %' }, grid: { color: 'rgba(51,65,85,0.4)' }, min: 40 },
         x: { grid: { display: false } }
@@ -643,13 +651,14 @@
     }
   });
 
-  const hwGaps = hwNames.map(hw => ({ hw, dec: avgMix(hwGroups[hw], DEC), may: avgMix(hwGroups[hw], MAY), n: hwGroups[hw].length }));
-  let hwTableHTML = '<table><thead><tr><th>HW</th><th>n</th><th style="color:var(--dec)">Dec~Feb Mix</th><th style="color:var(--may)">May Mix</th><th>Dec~Feb→May 缺口</th></tr></thead><tbody>';
+  const hwGaps = hwNames.map(hw => ({ hw, dec: avgMix(hwGroups[hw], DEC), may: avgMix(hwGroups[hw], MAY), mar: avgMix(hwGroups[hw], MAR), n: hwGroups[hw].length }));
+  let hwTableHTML = '<table><thead><tr><th>HW</th><th>n</th><th style="color:var(--dec)">Dec Mix</th><th>Mar Mix</th><th style="color:var(--may)">May Mix</th><th>Dec→May 缺口</th><th>Mar→May 恢復</th></tr></thead><tbody>';
   hwGaps.forEach(h => {
-    const gap = h.may - h.dec;
-    hwTableHTML += `<tr><td>${h.hw}</td><td>${h.n}</td><td class="mono text-blue">${h.dec.toFixed(1)}%</td>
+    const gap = h.may - h.dec, rec = h.may - h.mar;
+    hwTableHTML += `<tr><td>${h.hw}</td><td>${h.n}</td><td class="mono text-blue">${h.dec.toFixed(1)}%</td><td class="mono">${h.mar.toFixed(1)}%</td>
       <td class="mono text-orange">${h.may.toFixed(1)}%</td>
-      <td class="mono ${gap>=0?'text-green':'text-red'}">${gap>=0?'+':''}${gap.toFixed(1)}pp</td></tr>`;
+      <td class="mono ${gap>=0?'text-green':'text-red'}">${gap>=0?'+':''}${gap.toFixed(1)}pp</td>
+      <td class="mono ${rec>0?'text-green':'text-red'}">${rec>=0?'+':''}${rec.toFixed(1)}pp</td></tr>`;
   });
   hwTableHTML += '</tbody></table>';
   document.getElementById('tableHw').innerHTML = hwTableHTML;
@@ -657,9 +666,9 @@
   const worstHwGap = hwGaps.reduce((w, h) => h.may - h.dec < w.gap ? { hw: h.hw, gap: h.may - h.dec } : w, { hw: '', gap: 0 });
   const bestHwGap = hwGaps.reduce((w, h) => h.may - h.dec > w.gap ? { hw: h.hw, gap: h.may - h.dec } : w, { hw: '', gap: -99 });
   document.getElementById('insightHw').innerHTML = `
-    <strong>🖥️ 硬體差異（Dec~Feb→May）：</strong>缺口最大 ${worstHwGap.hw}（${worstHwGap.gap.toFixed(1)}pp），
+    <strong>🖥️ 硬體差異（Dec→May）：</strong>缺口最大 ${worstHwGap.hw}（${worstHwGap.gap.toFixed(1)}pp），
     最小 ${bestHwGap.hw}（${bestHwGap.gap>=0?'+':''}${bestHwGap.gap.toFixed(1)}pp）。
-    不同硬體版本間可觀察掉落幅度是否有顯著差異。
+    所有版本均呈現類似的掉落—恢復模式，但恢復幅度有差異。
   `;
 
   // ── Section 6: Region ──
@@ -681,7 +690,7 @@
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { position: 'bottom' },
-        title: { display: true, text: '地區 Dec~Feb vs May', color: '#e2e8f0', font: { size: 13 } } },
+        title: { display: true, text: '地區 Dec vs May', color: '#e2e8f0', font: { size: 13 } } },
       scales: {
         y: { title: { display: true, text: 'Mix %' }, grid: { color: 'rgba(51,65,85,0.4)' }, min: 40 },
         x: { grid: { display: false } }
@@ -708,14 +717,15 @@
     }
   });
 
-  let regTableHTML = '<table><thead><tr><th>地區</th><th>n</th><th style="color:var(--dec)">Dec~Feb Mix</th><th style="color:var(--may)">May Mix</th><th>Dec~Feb→May</th></tr></thead><tbody>';
+  let regTableHTML = '<table><thead><tr><th>地區</th><th>n</th><th style="color:var(--dec)">Dec Mix</th><th>Mar Mix</th><th style="color:var(--may)">May Mix</th><th>Dec→May</th><th>Mar→May</th></tr></thead><tbody>';
   regionNames.forEach(r => {
     const g = regionGroups[r];
-    const d = avgMix(g, DEC), m = avgMix(g, MAY);
-    const gp = m - d;
-    regTableHTML += `<tr><td>${r}</td><td>${g.length}</td><td class="mono text-blue">${d.toFixed(1)}%</td>
+    const d = avgMix(g, DEC), mar = avgMix(g, MAR), m = avgMix(g, MAY);
+    const gp = m - d, rec = m - mar;
+    regTableHTML += `<tr><td>${r}</td><td>${g.length}</td><td class="mono text-blue">${d.toFixed(1)}%</td><td class="mono">${mar.toFixed(1)}%</td>
       <td class="mono text-orange">${m.toFixed(1)}%</td>
-      <td class="mono ${gp>=0?'text-green':'text-red'}">${gp>=0?'+':''}${gp.toFixed(1)}pp</td></tr>`;
+      <td class="mono ${gp>=0?'text-green':'text-red'}">${gp>=0?'+':''}${gp.toFixed(1)}pp</td>
+      <td class="mono ${rec>0?'text-green':'text-red'}">${rec>=0?'+':''}${rec.toFixed(1)}pp</td></tr>`;
   });
   regTableHTML += '</tbody></table>';
   document.getElementById('tableRegion').innerHTML = regTableHTML;
@@ -724,7 +734,7 @@
   const worstReg = regGaps.reduce((w, x) => x.gap < w.gap ? x : w, { r: '', gap: 0 });
   const bestReg = regGaps.reduce((w, x) => x.gap > w.gap ? x : w, { r: '', gap: -99 });
   document.getElementById('insightRegion').innerHTML = `
-    <strong>🗺️ 地區差異（Dec~Feb→May）：</strong>缺口最大 ${worstReg.r}（${worstReg.gap.toFixed(1)}pp），
+    <strong>🗺️ 地區差異（Dec→May）：</strong>缺口最大 ${worstReg.r}（${worstReg.gap.toFixed(1)}pp），
     最接近恢復 ${bestReg.r}（${bestReg.gap>=0?'+':''}${bestReg.gap.toFixed(1)}pp）。
     地區差異可反映營運執行力或顧客組成差異。
   `;
@@ -754,7 +764,7 @@
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { position: 'bottom' },
-        title: { display: true, text: '規模 Dec~Feb vs May', color: '#e2e8f0', font: { size: 13 } } },
+        title: { display: true, text: '規模 Dec vs May', color: '#e2e8f0', font: { size: 13 } } },
       scales: {
         y: { title: { display: true, text: 'Mix %' }, grid: { color: 'rgba(51,65,85,0.4)' }, min: 40 },
         x: { grid: { display: false } }
@@ -769,15 +779,15 @@
   new Chart(document.getElementById('chartVolScatter'), {
     type: 'scatter',
     data: {
-      datasets: [{ label: 'Dec~Feb銷售額 vs Dec~Feb→May缺口', data: volScatterData,
+      datasets: [{ label: 'Dec銷售額 vs Dec→May缺口', data: volScatterData,
         backgroundColor: volScatterData.map(d => d.y > 0 ? 'rgba(248,113,113,0.5)' : 'rgba(74,222,128,0.5)'), pointRadius: 4 }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false },
-        title: { display: true, text: 'Dec~Feb 銷售額 vs Dec~Feb→May 缺口', color: '#e2e8f0', font: { size: 13 } } },
+        title: { display: true, text: 'Dec 銷售額 vs Dec→May 缺口', color: '#e2e8f0', font: { size: 13 } } },
       scales: {
-        x: { title: { display: true, text: 'Dec~Feb 銷售額 (M)' }, grid: { color: 'rgba(51,65,85,0.4)' } },
+        x: { title: { display: true, text: 'Dec 銷售額 (M)' }, grid: { color: 'rgba(51,65,85,0.4)' } },
         y: { title: { display: true, text: '缺口 (pp)' }, grid: { color: 'rgba(51,65,85,0.4)' } }
       }
     }
@@ -785,7 +795,7 @@
 
   const volGaps = volOrder.filter(t=>volGroups[t]).map(t => (avgMix(volGroups[t], MAY) - avgMix(volGroups[t], DEC)).toFixed(1));
   document.getElementById('insightVol').innerHTML = `
-    <strong>💰 規模效應（Dec~Feb→May）：</strong>${volOrder.filter(t=>volGroups[t]).map((t,i) => `${t}: ${volGaps[i]}pp`).join('、')}。
+    <strong>💰 規模效應（Dec→May）：</strong>${volOrder.filter(t=>volGroups[t]).map((t,i) => `${t}: ${volGaps[i]}pp`).join('、')}。
     觀察大型門店是否因客流壓力更不容易恢復。
   `;
 
@@ -807,7 +817,7 @@
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { position: 'bottom' },
-        title: { display: true, text: '門店年齡 Dec~Feb vs May', color: '#e2e8f0', font: { size: 13 } } },
+        title: { display: true, text: '門店年齡 Dec vs May', color: '#e2e8f0', font: { size: 13 } } },
       scales: {
         y: { title: { display: true, text: 'Mix %' }, grid: { color: 'rgba(51,65,85,0.4)' }, min: 40 },
         x: { grid: { display: false } }
@@ -836,11 +846,45 @@
 
   const ageGaps = activeAges.map(t => (avgMix(ageGroups[t], MAY) - avgMix(ageGroups[t], DEC)).toFixed(1));
   document.getElementById('insightAge').innerHTML = `
-    <strong>🏪 年齡效應（Dec~Feb→May）：</strong>${activeAges.map((t,i) => `${t}: ${ageGaps[i]}pp`).join('、')}。
+    <strong>🏪 年齡效應（Dec→May）：</strong>${activeAges.map((t,i) => `${t}: ${ageGaps[i]}pp`).join('、')}。
     較新門店若缺口更大，可能代表這些門店的會員使用習慣更依賴舊有 Kiosk 流程。
   `;
 
-  // ── Section 9: Dec Mix vs Gap (single chart) ──
+  // ── Section 9: Drop Depth vs Recovery ──
+  const dropRecoveryData = normalIdx.map(i => {
+    const decMix = DATE_METRICS[DEC].mix[i];
+    const marMix = DATE_METRICS[MAR].mix[i];
+    const mayMix = DATE_METRICS[MAY].mix[i];
+    const dropFromDec = decMix - marMix; // how much it fell at worst
+    const recoveredFromDec = mayMix - marMix; // how much recovered from trough
+    const remainingGap = decMix - mayMix; // how far from baseline
+    return { x: dropFromDec, y: remainingGap, label: STORE_META[i][0], recovered: recoveredFromDec };
+  });
+
+  new Chart(document.getElementById('chartDropRecovery'), {
+    type: 'scatter',
+    data: {
+      datasets: [{
+        label: '掉幅深度 vs 剩餘缺口',
+        data: dropRecoveryData,
+        backgroundColor: dropRecoveryData.map(d => d.y <= 0 ? 'rgba(74,222,128,0.6)' : d.y > 10 ? 'rgba(248,113,113,0.7)' : 'rgba(251,191,36,0.5)'),
+        pointRadius: 4.5
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        title: { display: true, text: 'Dec→Mar 掉幅深度 vs Dec→May 剩餘缺口', color: '#e2e8f0', font: { size: 13 } },
+        tooltip: { callbacks: { label: ctx => `${ctx.raw.label}: 掉${ctx.raw.x.toFixed(1)}pp, 殘差${ctx.raw.y.toFixed(1)}pp` } }
+      },
+      scales: {
+        x: { title: { display: true, text: 'Dec→Mar 掉幅 (pp)' }, grid: { color: 'rgba(51,65,85,0.4)' } },
+        y: { title: { display: true, text: 'Dec→May 剩餘缺口 (pp)' }, grid: { color: 'rgba(51,65,85,0.4)' } }
+      }
+    }
+  });
+
+  // Dec Mix level vs Dec→May gap
   const decMixVsGapData = normalIdx.map(i => ({
     x: DATE_METRICS[DEC].mix[i],
     y: DATE_METRICS[DEC].mix[i] - DATE_METRICS[MAY].mix[i],
@@ -850,7 +894,7 @@
     type: 'scatter',
     data: {
       datasets: [{
-        label: 'Dec~Feb Mix 水準 vs 缺口',
+        label: 'Dec Mix 水準 vs 缺口',
         data: decMixVsGapData,
         backgroundColor: decMixVsGapData.map(d => d.y <= 0 ? 'rgba(74,222,128,0.6)' : 'rgba(248,113,113,0.5)'),
         pointRadius: 4.5
@@ -859,12 +903,12 @@
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false },
-        title: { display: true, text: 'Dec~Feb Mix 水準 vs Dec~Feb→May 缺口', color: '#e2e8f0', font: { size: 13 } },
-        tooltip: { callbacks: { label: ctx => `${ctx.raw.label}: Dec~Feb ${ctx.raw.x.toFixed(1)}%, 缺口 ${ctx.raw.y.toFixed(1)}pp` } }
+        title: { display: true, text: 'Dec Mix 水準 vs Dec→May 缺口', color: '#e2e8f0', font: { size: 13 } },
+        tooltip: { callbacks: { label: ctx => `${ctx.raw.label}: Dec ${ctx.raw.x.toFixed(1)}%, 缺口 ${ctx.raw.y.toFixed(1)}pp` } }
       },
       scales: {
-        x: { title: { display: true, text: 'Dec~Feb Mix %' }, grid: { color: 'rgba(51,65,85,0.4)' } },
-        y: { title: { display: true, text: 'Dec~Feb→May 缺口 (pp)' }, grid: { color: 'rgba(51,65,85,0.4)' } }
+        x: { title: { display: true, text: 'Dec Mix %' }, grid: { color: 'rgba(51,65,85,0.4)' } },
+        y: { title: { display: true, text: 'Dec→May 缺口 (pp)' }, grid: { color: 'rgba(51,65,85,0.4)' } }
       }
     }
   });
@@ -878,46 +922,43 @@
   const corr = cov / (stddev(decMixes) * stddev(gapArr));
 
   document.getElementById('insightRecovery').innerHTML = `
-    <strong>🔬 Mix 水準 vs 缺口：</strong>圖表顯示 Dec~Feb 原始 Mix 越高的門店是否缺口越大。
-    Dec~Feb Mix 與 Dec~Feb→May 缺口的相關係數 r = ${corr.toFixed(3)}
+    <strong>🔬 恢復深度：</strong>左圖顯示 Mar 掉幅越深的門店，May 剩餘缺口是否也越大（正相關代表深摔難復）。
+    右圖顯示 Dec 原始 Mix 越高的門店是否缺口越大。Dec Mix 與 Dec→May 缺口的相關係數 r = ${corr.toFixed(3)}
     ${Math.abs(corr)>0.3 ? '（<strong class="text-orange">中等相關</strong>，高 Mix 門店確實恢復較難）' : '（弱相關，Mix 水準非主因）'}。
   `;
 
-  // ── Section 10: May Sub-windows (5/14~27 vs 5/14~28) ──
-  const mayKeys = [MAY_PREV, MAY];
-  const mayLabels = [MAY_PREV_LABEL, MAY_LABEL];
+  // ── Section 10: May Sub-windows ──
+  const mayKeys = ['20260501~0518','20260514~0519','20260514~0520','20260521~0527','20260514~0527'];
+  const mayLabels = ['5/1~18','5/14~19','5/14~20','5/21~27','5/14~27'];
 
-  // Bar chart comparing the two May windows
+  const mayWindowDS = [
+    { label: '一般店 平均', data: mayKeys.map(k => avgMix(normalIdx, k)), borderColor: DEC_COLOR, borderWidth: 2.5, pointRadius: 4, tension: 0.3 },
+    { label: 'Dec 基線', data: mayKeys.map(() => decMixAvg), borderColor: 'rgba(56,189,248,0.4)', borderWidth: 1, borderDash: [6,3], pointRadius: 0 }
+  ];
   new Chart(document.getElementById('chartMayWindows'), {
-    type: 'bar',
-    data: {
-      labels: ['一般店 平均', 'Dec~Feb 基線'],
-      datasets: [
-        { label: MAY_PREV_LABEL, data: [avgMix(normalIdx, MAY_PREV), decMixAvg], backgroundColor: 'rgba(251,191,36,0.7)' },
-        { label: MAY_LABEL, data: [avgMix(normalIdx, MAY), decMixAvg], backgroundColor: 'rgba(251,146,60,0.7)' }
-      ]
-    },
+    type: 'line',
+    data: { labels: mayLabels, datasets: mayWindowDS },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { position: 'bottom' },
-        title: { display: true, text: 'May 子窗口 Mix 比較', color: '#e2e8f0', font: { size: 13 } } },
+        title: { display: true, text: 'May 各子窗口 Mix 趨勢', color: '#e2e8f0', font: { size: 13 } } },
       scales: {
         y: { title: { display: true, text: 'Mix %' }, grid: { color: 'rgba(51,65,85,0.4)' } },
-        x: { grid: { display: false } }
+        x: { grid: { color: 'rgba(51,65,85,0.2)' } }
       }
     }
   });
 
-  // Correlation between 5/14~27 and 5/14~28
-  const mayW1 = normalIdx.map(i => DATE_METRICS[MAY_PREV].mix[i]);
-  const mayW2 = normalIdx.map(i => DATE_METRICS[MAY].mix[i]);
+  // Correlation between 5/1~18 and 5/14~27
+  const mayW1 = normalIdx.map(i => DATE_METRICS['20260501~0518'].mix[i]);
+  const mayW2 = normalIdx.map(i => DATE_METRICS['20260514~0527'].mix[i]);
   const corrWinData = normalIdx.map((idx, j) => ({ x: mayW1[j], y: mayW2[j], label: STORE_META[idx][0] }));
 
   new Chart(document.getElementById('chartWindowCorr'), {
     type: 'scatter',
     data: {
       datasets: [
-        { label: '5/14~27 vs 5/14~28', data: corrWinData,
+        { label: '5/1~18 vs 5/14~27', data: corrWinData,
           backgroundColor: 'rgba(34,211,238,0.5)', pointRadius: 4 },
         { label: '等值線', data: [{x:20,y:20},{x:100,y:100}], type: 'line',
           borderColor: 'rgba(148,163,184,0.4)', borderWidth: 1, borderDash: [6,4], pointRadius: 0, fill: false }
@@ -926,22 +967,20 @@
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { position: 'bottom' },
-        title: { display: true, text: '子窗口一致性：5/14~27 vs 5/14~28', color: '#e2e8f0', font: { size: 13 } } },
+        title: { display: true, text: '子窗口一致性：5/1~18 vs 5/14~27', color: '#e2e8f0', font: { size: 13 } } },
       scales: {
-        x: { title: { display: true, text: '5/14~27 Mix %' }, grid: { color: 'rgba(51,65,85,0.4)' } },
-        y: { title: { display: true, text: '5/14~28 Mix %' }, grid: { color: 'rgba(51,65,85,0.4)' } }
+        x: { title: { display: true, text: '5/1~18 Mix %' }, grid: { color: 'rgba(51,65,85,0.4)' } },
+        y: { title: { display: true, text: '5/14~27 Mix %' }, grid: { color: 'rgba(51,65,85,0.4)' } }
       }
     }
   });
 
   const winCov = mayW1.reduce((s,x,i)=> s + (x-avg(mayW1))*(mayW2[i]-avg(mayW2)),0)/(mayW1.length-1);
   const winCorr = winCov / (stddev(mayW1)*stddev(mayW2));
-  const windowDelta = avgMix(normalIdx, MAY) - avgMix(normalIdx, MAY_PREV);
   document.getElementById('insightWindows').innerHTML = `
-    <strong>📅 子窗口分析：</strong>5/14~27: ${avgMix(normalIdx, MAY_PREV).toFixed(1)}% → 5/14~28: ${avgMix(normalIdx, MAY).toFixed(1)}%（${windowDelta>=0?'+':''}${windowDelta.toFixed(2)}pp）。
-    多一天資料${windowDelta>=0?'使平均略升':'使平均略降'}。
-    兩窗口門店間相關性 r=${winCorr.toFixed(3)}，${winCorr>0.9?'極高一致性，代表門店排名穩定':'高一致性'}。
-    ${dayImproveCount} 家門店在加入第 28 天後 Mix 提升或持平。
+    <strong>📅 子窗口分析：</strong>May 不同統計窗口的 Mix 值有波動（${mayLabels.map((l,i)=> `${l}: ${avgMix(normalIdx, mayKeys[i]).toFixed(1)}%`).join('、')}）。
+    兩個主要窗口的門店間相關性 r=${winCorr.toFixed(3)}，${winCorr>0.7?'高度一致代表非隨機波動':'一致性普通，需關注窗口期差異'}。
+    若特定窗口 Mix 特別低，需排查該期間是否有系統異常或促銷活動。
   `;
 
   // ── Section 11: Full Table ──
@@ -951,11 +990,13 @@
     const region = getRegion(STORE_META[i][1]);
     const decAmt = DATE_METRICS[DEC].amt[i];
     const decMix = DATE_METRICS[DEC].mix[i];
-    const mayPrevMix = DATE_METRICS[MAY_PREV].mix[i];
+    const marMix = DATE_METRICS[MAR].mix[i];
     const mayMix = DATE_METRICS[MAY].mix[i];
+    const allMix = allKeys.map(k => DATE_METRICS[k].mix[i]);
     const decMayGap = decMix - mayMix;
+    const marMayRec = mayMix - marMix;
     const outcome = classifyOutcome(i);
-    return { i, id, hw, region, decAmt, decMix, mayPrevMix, mayMix, decMayGap, outcome };
+    return { i, id, hw, region, decAmt, decMix, marMix, mayMix, allMix, decMayGap, marMayRec, outcome };
   });
 
   let sortCol = 'decMayGap';
@@ -974,11 +1015,15 @@
       <th style="cursor:pointer" data-col="id">門店 ID ↕</th>
       <th data-col="hw">HW ↕</th>
       <th data-col="region">地區 ↕</th>
-      <th data-col="decAmt">Dec~Feb 銷售額 ↕</th>
-      <th data-col="decMix" style="background:rgba(56,189,248,0.15)">🔵 Dec~Feb Mix ↕</th>
-      <th data-col="mayPrevMix" style="background:rgba(251,191,36,0.1)">🟡 5/14~27 Mix ↕</th>
-      <th data-col="mayMix" style="background:rgba(251,146,60,0.15)">🟠 5/14~28 Mix ↕</th>
-      <th data-col="decMayGap">Dec~Feb→May ↕</th>
+      <th data-col="decAmt">Dec 銷售額 ↕</th>
+      <th data-col="decMix" style="background:rgba(56,189,248,0.15)">🔵 Dec Mix ↕</th>`;
+    // auxiliary months
+    ['2026/01','2026/02','2026/03','2026/04'].forEach((l,ci) => {
+      html += `<th data-col="aux${ci}" style="color:var(--dim)">${l} ↕</th>`;
+    });
+    html += `<th data-col="mayMix" style="background:rgba(251,146,60,0.15)">🟠 May Mix ↕</th>
+      <th data-col="decMayGap">Dec→May ↕</th>
+      <th data-col="marMayRec">Mar→May ↕</th>
       <th>狀態</th></tr></thead><tbody>`;
 
     sorted.forEach(r => {
@@ -988,10 +1033,14 @@
 
       html += `<tr style="${rowBg}"><td class="mono">${r.id}</td><td>${r.hw}</td><td>${r.region}</td>
         <td class="mono">${(r.decAmt/1e6).toFixed(2)}M</td>
-        <td class="mono text-blue" style="background:rgba(56,189,248,0.06)">${r.decMix.toFixed(1)}</td>
-        <td class="mono ${mixColor(r.mayPrevMix)}" style="background:rgba(251,191,36,0.04)">${r.mayPrevMix.toFixed(1)}</td>
-        <td class="mono text-orange" style="background:rgba(251,146,60,0.06)">${r.mayMix.toFixed(1)}</td>
+        <td class="mono text-blue" style="background:rgba(56,189,248,0.06)">${r.decMix.toFixed(1)}</td>`;
+      // Jan, Feb, Mar, Apr (indices 1,2,3,4)
+      [1,2,3,4].forEach(ci => {
+        html += `<td class="mono ${mixColor(r.allMix[ci])}" style="color:var(--dim)">${r.allMix[ci].toFixed(1)}</td>`;
+      });
+      html += `<td class="mono text-orange" style="background:rgba(251,146,60,0.06)">${r.mayMix.toFixed(1)}</td>
         <td class="mono ${r.decMayGap>0?'text-red':'text-green'}">${r.decMayGap>0?'+':''}${r.decMayGap.toFixed(1)}</td>
+        <td class="mono ${r.marMayRec>0?'text-green':'text-red'}">${r.marMayRec>=0?'+':''}${r.marMayRec.toFixed(1)}</td>
         <td style="font-size:11px">${r.outcome.split(' ')[0]}</td>`;
       html += '</tr>';
     });
@@ -1001,7 +1050,14 @@
     document.getElementById('fullTableWrap').querySelectorAll('th[data-col]').forEach(th => {
       th.style.cursor = 'pointer';
       th.addEventListener('click', () => {
-        sortCol = th.dataset.col;
+        const col = th.dataset.col;
+        if (col.startsWith('aux')) {
+          const ci = parseInt(col.replace('aux','')) + 1;
+          storeRows.forEach(r => r._sortAux = r.allMix[ci]);
+          sortCol = '_sortAux';
+        } else {
+          sortCol = col;
+        }
         sortDir *= -1;
         renderFullTable();
       });
@@ -1011,12 +1067,12 @@
 
   // ── Hypothesis Matrix ──
   const hypotheses = [
-    { title: '🔄 UX 流程中斷（持續性）', desc: `Revamp 後會員掃碼步驟改變，至今仍有 ${worsenedCount} 家門店未恢復 Dec~Feb 水準，代表不是暫時性適應問題，而是流程本身有結構缺陷。`, evidence: 5 },
-    { title: '📊 高 Mix 門店恢復更難', desc: `Dec~Feb Mix 與缺口相關性 r=${corr.toFixed(2)}。${corr>0.3?'高 Mix 門店對舊流程依賴度高，新流程讓其損失更大。':'相關性不強，需排查其他維度。'}`, evidence: corr > 0.3 ? 4 : 2 },
+    { title: '🔄 UX 流程中斷（持續性）', desc: `Revamp 後會員掃碼步驟改變，至今仍有 ${worsenedCount} 家門店未恢復 Dec 水準，代表不是暫時性適應問題，而是流程本身有結構缺陷。`, evidence: 5 },
+    { title: '📊 高 Mix 門店恢復更難', desc: `Dec Mix 與 Dec→May 缺口相關性 r=${corr.toFixed(2)}。${corr>0.3?'高 Mix 門店對舊流程依賴度高，新流程讓其損失更大。':'相關性不強，需排查其他維度。'}`, evidence: corr > 0.3 ? 4 : 2 },
     { title: '🗺️ 地區營運落差', desc: `${worstReg.r} 缺口 ${worstReg.gap.toFixed(1)}pp vs ${bestReg.r} ${bestReg.gap>=0?'+':''}${bestReg.gap.toFixed(1)}pp。地區間差異反映門市引導與培訓的不均勻。`, evidence: Math.abs(worstReg.gap - bestReg.gap) > 3 ? 4 : 2 },
     { title: '🖥️ 特定硬體殘留問題', desc: `${worstHwGap.hw} 缺口最大（${worstHwGap.gap.toFixed(1)}pp），可能存在硬體與新軟體的互動問題（掃碼速度/NFC 穩定性）。`, evidence: Math.abs(worstHwGap.gap) > 5 ? 4 : 3 },
     { title: '🔀 會員行為改變', desc: '部分會員可能因初次體驗不佳而養成「跳過掃碼」習慣，即使後續修復了 UX 也不再嘗試，需要主動觸達。', evidence: 4 },
-    { title: '📅 數據穩定性驗證', desc: `兩個 May 窗口（5/14~27 vs 5/14~28）相關性 r=${winCorr.toFixed(3)}，${winCorr>0.9?'數據高度穩定，排除隨機波動因素':'需進一步確認窗口穩定性'}。`, evidence: winCorr > 0.9 ? 2 : 3 }
+    { title: '📅 時間窗口數據偏差', desc: `May 各子窗口 Mix 有波動（${avgMix(normalIdx,'20260501~0518').toFixed(1)}% ~ ${avgMix(normalIdx,'20260521~0527').toFixed(1)}%），需確認是否因採樣窗口或促銷影響數據。`, evidence: 2 }
   ];
 
   document.getElementById('hypothesisGrid').innerHTML = hypotheses.map(h => `
@@ -1034,13 +1090,13 @@
 
   // ── Action Cards ──
   const actions = [
-    { role: 'CRM Team', tag: 'tag-blue', title: '📋 Dec~Feb 活躍會員 vs May 比對', desc: '列出 Dec~Feb 有掃碼但 May 未掃碼的會員，透過 APP 推播 / SMS 確認是「未消費」還是「消費但未掃碼」。' },
-    { role: 'CRM Team', tag: 'tag-blue', title: '🎯 針對仍惡化門店強化引導', desc: `${worsenedCount} 家仍低於 Dec~Feb 的門店，優先部署門市端會員引導 SOP 和掃碼提示物料。` },
-    { role: 'CRM Team', tag: 'tag-blue', title: '📊 會員分群差異分析', desc: '按消費頻率/金額將會員分群，分析各群 Dec~Feb→May 的掃碼率變化，找出流失最嚴重的客群。' },
-    { role: 'Dev Engineer', tag: 'tag-green', title: '🔬 UX 漏斗埋點（全路徑）', desc: '在 Kiosk 結帳流程加入事件追蹤：進入掃碼頁 → 掃碼嘗試 → 掃碼成功 → 結帳完成，量化每步流失率。' },
+    { role: 'CRM Team', tag: 'tag-blue', title: '📋 Dec 活躍會員 vs May 比對', desc: '列出 Dec 有掃碼但 May 未掃碼的會員，透過 APP 推播 / SMS 確認是「未消費」還是「消費但未掃碼」。' },
+    { role: 'CRM Team', tag: 'tag-blue', title: '🎯 針對仍惡化門店強化引導', desc: `${worsenedCount} 家仍低於 Dec 的門店，優先部署門市端會員引導 SOP 和掃碼提示物料。` },
+    { role: 'CRM Team', tag: 'tag-blue', title: '📊 會員分群差異分析', desc: '按消費頻率/金額將會員分群，分析各群 Dec→May 的掃碼率變化，找出流失最嚴重的客群。' },
+    { role: 'Dev Engineer', tag: 'tag-green', title: '🔬 UX 漏斗埋點（Dec→May 全路徑）', desc: '在 Kiosk 結帳流程加入事件追蹤：進入掃碼頁 → 掃碼嘗試 → 掃碼成功 → 結帳完成，量化每步流失率。' },
     { role: 'Dev Engineer', tag: 'tag-green', title: '🧪 A/B 測試：新舊 UX', desc: '選 20 家「仍惡化」門店還原舊版 UX 做對照，2 週後比對 Mix 差異，確認是否為 UX 因果關係。' },
     { role: 'Dev Engineer', tag: 'tag-green', title: `🖥️ ${worstHwGap.hw} 硬體專項測試`, desc: `針對缺口最大的 ${worstHwGap.hw} 版本做實機掃碼測試（速度、成功率、NFC 穩定度），排除硬體因素。` },
-    { role: 'Product Manager', tag: 'tag-purple', title: '📈 建立 Dec~Feb 基線回歸追蹤', desc: `以 Dec~Feb Mix 為基線，建立每週追蹤 Dashboard，設目標：4 週內將平均缺口從 ${Math.abs(gap).toFixed(1)}pp 縮小至 1pp 以內。` },
+    { role: 'Product Manager', tag: 'tag-purple', title: '📈 建立 Dec 基線回歸追蹤', desc: '以 Dec Mix 為基線，建立每週追蹤 Dashboard，設目標：4 週內將平均缺口從 3.5pp 縮小至 1pp 以內。' },
     { role: 'Product Manager', tag: 'tag-purple', title: `🗺️ ${worstReg.r} 地區試點`, desc: `選擇缺口最大的 ${worstReg.r} 做密集修復試點（UX 優化 + 引導強化），驗證後再全面推廣。` },
     { role: 'Product Manager', tag: 'tag-purple', title: '⚡ 快速修復 vs 長期優化', desc: '區分「可立即修復的 UX 問題」（按鈕位置、預設選項）和「需長期調整的行為問題」（會員習慣改變），制定雙軌策略。' }
   ];
