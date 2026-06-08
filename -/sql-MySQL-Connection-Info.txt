@@ -1,0 +1,3 @@
+URL: jdbc:mysql://34.81.120.135:3306/
+Username: readonly_user
+Password: StrongPassword123!
