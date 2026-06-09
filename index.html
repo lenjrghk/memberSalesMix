@@ -694,7 +694,8 @@ async function handleLiveFetch() {
 document.getElementById('dbLoadBtn').addEventListener('click', applyDBDateRange);
 document.getElementById('dbDateFrom').addEventListener('change', applyDBDateRange);
 document.getElementById('dbDateTo').addEventListener('change', applyDBDateRange);
-document.getElementById('liveFetchBtn').addEventListener('click', handleLiveFetch);
+const liveFetchBtn = document.getElementById('liveFetchBtn');
+if (liveFetchBtn) liveFetchBtn.addEventListener('click', handleLiveFetch);
 
 // Mobile controls toggle
 (function() {
