@@ -2,9 +2,11 @@
 """
 Sync member sales mix data from MySQL (PRD) to local SQLite for offline frontend use.
 Fetches daily store-level and overall data for 2026.
+Supports incremental sync — automatically detects last synced date and only fetches new data.
 
 Usage:
-  python3 sync_mysql_to_sqlite.py                    # Sync all 2026 data up to today
+  python3 sync_mysql_to_sqlite.py                    # Incremental sync (auto-detect last date)
+  python3 sync_mysql_to_sqlite.py --full             # Force full sync from 2026-01-01
   python3 sync_mysql_to_sqlite.py --from 2026-06-01  # Sync from specific date
   python3 sync_mysql_to_sqlite.py --from 2026-06-01 --to 2026-06-08
 """
@@ -172,6 +174,19 @@ def to_utc_ts(local_date_str):
     return (d - timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
 
 
+def get_last_synced_date(db_path):
+    """Return the latest biz_date already in SQLite, or None if empty."""
+    try:
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        c.execute("SELECT MAX(biz_date) FROM store_daily")
+        row = c.fetchone()
+        conn.close()
+        return row[0] if row and row[0] else None
+    except Exception:
+        return None
+
+
 def sync_data(date_from, date_to):
     utc_from = to_utc_ts(date_from)
     utc_to = to_utc_ts(date_to)
@@ -252,14 +267,32 @@ def sync_data(date_from, date_to):
 
 def main():
     parser = argparse.ArgumentParser(description="Sync MySQL → SQLite for member sales mix")
-    parser.add_argument("--from", dest="date_from", default="2026-01-01",
-                        help="Start date (Taiwan local, YYYY-MM-DD)")
+    parser.add_argument("--from", dest="date_from", default=None,
+                        help="Start date (Taiwan local, YYYY-MM-DD). Default: auto-detect from last synced date")
     parser.add_argument("--to", dest="date_to", default=None,
                         help="End date exclusive (Taiwan local, default: tomorrow)")
+    parser.add_argument("--full", action="store_true",
+                        help="Force full sync from 2026-01-01 (ignore existing data)")
     args = parser.parse_args()
 
     date_to = args.date_to or (date.today() + timedelta(days=1)).strftime("%Y-%m-%d")
-    sync_data(args.date_from, date_to)
+
+    if args.full:
+        date_from = args.date_from or "2026-01-01"
+        print("🔄 Full sync requested")
+    elif args.date_from:
+        date_from = args.date_from
+    else:
+        last_synced = get_last_synced_date(SQLITE_DB)
+        if last_synced:
+            # Re-sync the last synced date (may have been partial) + new dates
+            date_from = last_synced
+            print(f"📊 Incremental sync: last synced date = {last_synced}, fetching from {date_from}")
+        else:
+            date_from = "2026-01-01"
+            print("📊 No existing data found, performing full sync")
+
+    sync_data(date_from, date_to)
 
 
 if __name__ == "__main__":
